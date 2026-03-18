@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bjarka Longevity AI Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <div>
+                <h1>Здоровье Бьярки</h1>
+                <p id="current-date"></p>
+            </div>
+            <div id="risk-level" class="risk-indicator">Расчет риска...</div>
+        </header>
+
+        <section class="card health-score-card">
+            <div class="score-circle">
+                <span class="score-value" id="health-score-val">--</span>
+                <span class="score-label">Индекс здоровья</span>
+            </div>
+            <div>
+                <h2>Анализ состояния</h2>
+                <p id="score-explanation">ИИ анализирует данные Бьярки...</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Тренд веса</h2>
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Топ рекомендаций</h2>
+            <div id="recommendations-container" class="recommendation-list">
+                <!-- Data injected via JS -->
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Добавить запись</h2>
+            <form id="log-form">
+                <input type="number" step="0.1" id="weight-input" placeholder="Вес (кг)">
+                <input type="number" id="activity-input" placeholder="Активность (мин)">
+                <input type="text" id="symptoms-input" placeholder="Симптомы (через запятую)">
+                <button type="submit">Обновить показатели</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Алерты и Риски</h2>
+            <div id="risk-factors">
+                <!-- Data injected via JS -->
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

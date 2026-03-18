@@ -1,0 +1,12 @@
+{
+  "name": "Bjarka",
+  "breed": "Samoyed",
+  "age": "5 years",
+  "weight": 22.5,
+  "target_weight": 22.0,
+  "target_activity": 60,
+  "diet": "Farmina N&D Pumpkin Lamb",
+  "supplements": ["Omega-3", "Probiotics"],
+  "conditions": ["Joint Sensitivity"],
+  "activity_level": "Moderate"
+}
