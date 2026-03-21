@@ -1,5 +1,5 @@
 /**
- * Risk Engine for Bjarka
+ * Risk Engine for Bjarki
  * Detects health risks and generates alerts.
  */
 

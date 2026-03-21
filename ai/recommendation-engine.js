@@ -1,5 +1,5 @@
 /**
- * Recommendation Engine for Bjarka
+ * Recommendation Engine for Bjarki
  * Generates dietary and health recommendations.
  */
 
@@ -51,7 +51,7 @@ class RecommendationEngine {
         if (latest.activity_minutes < 30 && !hasLimping) {
             recs.push({
                 title: "Exercise",
-                text: "Bjarka seems under-stimulated. Try a 15-minute training session or fetch.",
+                text: "Bjarki seems under-stimulated. Try a 15-minute training session or fetch.",
                 priority: "Medium"
             });
         }
@@ -68,7 +68,7 @@ class RecommendationEngine {
         // 6. Senior Mobility (based on 11-year age)
         recs.push({
             title: "Senior Mobility Check",
-            text: "Monitor how Bjarka stands on her back legs. Look for signs of stiffening or weakness.",
+            text: "Monitor how Bjarki stands on her back legs. Look for signs of stiffening or weakness.",
             priority: "Routine"
         });
 

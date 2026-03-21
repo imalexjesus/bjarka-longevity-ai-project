@@ -2,31 +2,167 @@ import { calculateHealthScore } from './ai/health-analyzer.js';
 import { analyzeRisk } from './ai/risk-engine.js';
 import { getRecommendations } from './ai/recommendation-engine.js';
 
-// No default logs, start fresh or from localStorage
+// Data from 21.03.2026 veterinary visit
 const defaultData = {
-    logs: []
+    logs: [
+        {
+            date: "2026-03-01",
+            weight: 27.8,
+            activity_minutes: 45,
+            symptoms: [],
+            appetite: "Good"
+        },
+        {
+            date: "2026-03-10",
+            weight: 27.6,
+            activity_minutes: 60,
+            symptoms: [],
+            appetite: "Good"
+        },
+        {
+            "date": "2026-03-21",
+            "weight": 31.0,
+            "activity_minutes": 0,
+            "symptoms": ["post_surgery_recovery", "stitches"],
+            "medications": [
+            "Синулокс 250мг (1т х 2р)", 
+            "Хлоргексидин 0.05% (обработка швов)",
+            "Габапентин 300мг (по назначению)"
+            ],
+            "diet": "Recovery Diet",
+            "temperature": 38.0,
+            "lab_results": {
+                "ALP": 88,
+                "MPV": 7.7,
+                "conclusion": "Для 10 лет 8 месяцев результаты оптимистичны. ALP (88) незначительно повышен. ЭХО сердца: норма для возраста, незначительная гипертрофия.",
+                "notes": "Хирургическое удаление опухоли, биохимия и ОАК в норме."
+            },
+            "mood": "recovering"
+        }
+    ]
 };
 
 const profile = {
-    name: "Бьярка",
+    name: "Бьярки",
     breed: "Самоед",
-    birth_date: "2015-04-26",
-    age: "10 years, 11 months",
-    target_weight: 22.0,
-    target_activity: 60
+    sex: "Female",
+    age: "10 лет 8 месяцев",
+    current_weight: 31.0,
+    target_weight: 25.0,
+    target_activity: 45,
+    diet: "Farmina N&D Pumpkin Lamb"
 };
 
-let healthData = JSON.parse(localStorage.getItem('bjarka_health_data')) || defaultData;
+let healthData = defaultData; // Force override for demo of new data. Use JSON.parse(localStorage.getItem('bjarki_health_data')) later.
 let chart;
+
+// --- THEME LOGIC ---
+const THEME_KEY = 'bjarki_theme';
+let isDarkTheme = localStorage.getItem(THEME_KEY) === 'dark';
+
+if (isDarkTheme) document.body.classList.add('dark-theme');
+
+document.addEventListener('DOMContentLoaded', () => {
+    const themeBtn = document.getElementById('theme-toggle');
+    themeBtn.textContent = isDarkTheme ? '☀️' : '🌙';
+    
+    themeBtn.addEventListener('click', () => {
+        isDarkTheme = !isDarkTheme;
+        document.body.classList.toggle('dark-theme', isDarkTheme);
+        themeBtn.textContent = isDarkTheme ? '☀️' : '🌙';
+        localStorage.setItem(THEME_KEY, isDarkTheme ? 'dark' : 'light');
+        renderChart(); // redraw chart to update colors
+    });
+});
 
 function init() {
     updateUI();
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU');
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     document.getElementById('log-form').addEventListener('submit', (e) => {
         e.preventDefault();
         addNewLog();
     });
+
+    // --- VIEW ROUTING ---
+    const navLinks = {
+        'nav-dashboard': 'dashboard-view',
+        'nav-history': 'history-view',
+        'nav-diet': 'diet-view'
+    };
+
+    Object.keys(navLinks).forEach(navId => {
+        document.getElementById(navId).addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView(navLinks[navId], navId);
+        });
+    });
+}
+
+function switchView(viewName, navId) {
+    // Hide all views
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    // Remove active class from nav
+    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+
+    // Show target view
+    document.getElementById(viewName).classList.remove('hidden');
+    document.getElementById(navId).classList.add('active');
+
+    // Specific logic per view
+    if (viewName === 'history-view') renderHistory();
+    if (viewName === 'diet-view') renderDiet();
+}
+
+function renderHistory() {
+    const container = document.getElementById('history-table-container');
+    if (!container) return;
+
+    const logs = [...healthData.logs].reverse();
+    
+    container.innerHTML = `
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Вес</th>
+                    <th>Активность</th>
+                    <th>Симптомы</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${logs.map(log => `
+                    <tr>
+                        <td>${log.date}</td>
+                        <td>${log.weight} кг</td>
+                        <td>${log.activity_minutes} мин</td>
+                        <td>${log.symptoms.length > 0 ? log.symptoms.join(', ') : '---'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function renderDiet() {
+    const container = document.getElementById('diet-details');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="diet-info">
+            <p><strong>Текущий рацион:</strong> ${profile.diet}</p>
+            <p><strong>Целевой вес:</strong> ${profile.target_weight} кг</p>
+            <p><strong>Дневная активность:</strong> ${profile.target_activity} мин</p>
+            <hr style="margin: 1rem 0; border: 0; border-top: 1px solid var(--border-color);">
+            <h3>Рекомендации по диете:</h3>
+            <ul class="text-sm" style="padding-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Кормить 2 раза в день равными порциями.</li>
+                <li>Избегать лакомств с высоким содержанием жира.</li>
+                <li>Всегда обеспечивать доступ к свежей воде.</li>
+                <li>После операции (21.03.2026) рекомендуется дробное питание.</li>
+            </ul>
+        </div>
+    `;
 }
 
 function addNewLog() {
@@ -46,7 +182,7 @@ function addNewLog() {
     };
 
     healthData.logs.push(newEntry);
-    localStorage.setItem('bjarka_health_data', JSON.stringify(healthData));
+    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
     updateUI();
     document.getElementById('log-form').reset();
 }
@@ -152,31 +288,19 @@ function renderLabResults(lab) {
     if (!container) return;
 
     if (!lab) {
-        container.innerHTML = '<p style="color: var(--text-dim);">No recent lab data available.</p>';
+        container.innerHTML = '<p class="text-sm">No recent lab data</p>';
         return;
     }
 
     container.innerHTML = `
-        <div style="display: flex; gap: 2rem; margin-top: 1rem;">
-            <div class="lab-metric ${lab.ALP_flag === 'H' ? 'flag-h' : ''}">
-                <label>ALP</label>
-                <value>${lab.ALP} U/l</value>
-                <span>${lab.ALP_flag || 'Normal'}</span>
-            </div>
-            <div class="lab-metric ${lab.MPV_flag === 'L' ? 'flag-l' : ''}">
-                <label>MPV</label>
-                <value>${lab.MPV} fL</value>
-                <span>${lab.MPV_flag || 'Normal'}</span>
-            </div>
+        <div class="lab-metric">
+            <span class="lbl">ALP</span>
+            <span class="val" style="color: ${lab.ALP_flag === 'H' ? 'var(--accent-red)' : 'var(--text-dark)'}">${lab.ALP} U/l</span>
         </div>
-        ${lab.conclusion ? `
-        <div class="lab-conclusion" style="margin-top: 1.5rem; background: rgba(79, 70, 229, 0.1); padding: 1rem; border-radius: 1rem; border: 1px solid var(--primary);">
-            <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.875rem;">📋 Clinical Conclusion:</h4>
-            <p style="font-size: 0.9375rem; line-height: 1.6;">${lab.conclusion}</p>
-        </div>` : ''}
-        <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
-            ${lab.notes}
-        </p>
+        <div class="lab-metric">
+            <span class="lbl">MPV</span>
+            <span class="val" style="color: ${lab.MPV_flag === 'L' ? 'var(--accent-blue)' : 'var(--text-dark)'}">${lab.MPV} fL</span>
+        </div>
     `;
 }
 
@@ -187,6 +311,9 @@ function renderChart() {
 
     if (chart) chart.destroy();
 
+    const textColor = isDarkTheme ? '#94a3b8' : '#475569';
+    const gridColor = isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
     chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -195,7 +322,7 @@ function renderChart() {
                 label: 'Вес (кг)',
                 data: weights,
                 borderColor: '#0ea5e9',
-                backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                backgroundColor: isDarkTheme ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.1)',
                 tension: 0.4,
                 fill: true
             }]
@@ -205,8 +332,15 @@ function renderChart() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { display: false } }
+                y: { 
+                    beginAtZero: false, 
+                    grid: { color: gridColor }, 
+                    ticks: { color: textColor } 
+                },
+                x: { 
+                    grid: { display: false }, 
+                    ticks: { color: textColor } 
+                }
             }
         }
     });

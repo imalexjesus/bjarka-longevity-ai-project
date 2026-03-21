@@ -1,5 +1,5 @@
 /**
- * Health Analyzer for Bjarka
+ * Health Analyzer for Bjarki
  * Calculates a health score (0-100) based on weight, activity, and symptoms.
  */
 
