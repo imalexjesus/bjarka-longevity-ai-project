@@ -1,21 +1,30 @@
 {
-  "name_en": "Bjarki",
-  "name_ru": "Бьярки",
-  "breed": "Samoyed",
+  "name_en": "Bjarka",
+  "name_ru": "Бьярка",
+  "breed": "Самоед",
   "birth_date": "2015-04-26",
-  "age": "10 years, 11 months",
-  "weight": 22.5,
-  "target_weight": 22.0,
-  "target_activity": 60,
+  "sex": "Female",
+  "age": "10 лет 8 месяцев",
+  "weight_current": 27.5,
+  "weight_target": 25.0,
+  "target_activity": 45,
   "diet": "Farmina N&D Pumpkin Lamb",
   "supplements": ["Omega-3", "Probiotics"],
-  "conditions": ["Joint Sensitivity"],
-  "activity_level": "High",
+  "conditions": [
+    "Удаление опухоли кожи (21.03.2026)",
+    "Контроль сердца (Ежегодное ЭХО)",
+    "Чувствительность суставов"
+  ],
   "medical_history": [
     {
-      "event": "Castration surgery",
       "date": "2026-01",
-      "notes": "Surgery performed approximately 2 months ago. Monitor metabolism and weight."
+      "event": "Операция по кастрации",
+      "notes": "Наблюдение за метаболизмом и весом."
+    },
+    {
+      "date": "2026-03-21",
+      "event": "Хирургическое удаление опухоли кожи под общей анестезией. Наложены швы."
     }
-  ]
+  ],
+  "activity_level": "Low (Senior)"
 }
