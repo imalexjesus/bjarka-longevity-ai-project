@@ -1,3 +1,52 @@
-{
-  "logs": []
-}
+[
+  {
+    "date": "2026-03-01",
+    "weight": 22.8,
+    "activity_minutes": 45,
+    "symptoms": [],
+    "appetite": "Good"
+  },
+  {
+    "date": "2026-03-05",
+    "weight": 22.7,
+    "activity_minutes": 50,
+    "symptoms": ["Limping (mild)"],
+    "appetite": "Normal"
+  },
+  {
+    "date": "2026-03-10",
+    "weight": 22.5,
+    "activity_minutes": 60,
+    "symptoms": [],
+    "appetite": "Good"
+  },
+  {
+    "date": "2026-03-15",
+    "weight": 22.4,
+    "activity_minutes": 30,
+    "symptoms": ["Limping"],
+    "appetite": "Low"
+  },
+  {
+    "date": "2026-03-17",
+    "weight": 22.2,
+    "activity_minutes": 20,
+    "symptoms": ["Limping", "Lethargy"],
+    "appetite": "Low"
+  },
+  {
+    "date": "2026-03-21",
+    "weight": 22.1,
+    "activity_minutes": 25,
+    "symptoms": ["Limping"],
+    "appetite": "Normal",
+    "lab_results": {
+      "ALP": 88,
+      "MPV": 7.7,
+      "ALP_flag": "H",
+      "MPV_flag": "L",
+      "conclusion": "Для 11 лет результаты выглядят весьма оптимистично. ALP (88) незначительно повышен — обсудить с ветеринаром (УЗИ). MPV (7.7) чуть ниже нормы, но при норме тромбоцитов клинического значения не имеет. Рекомендовано следить за аппетитом и состоянием суставов (задние лапы).",
+      "notes": "Chemistry and Hematology tests performed. ALP slightly elevated, MPV slightly low. Other parameters normal."
+    }
+  }
+]

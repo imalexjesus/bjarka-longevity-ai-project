@@ -1,12 +1,21 @@
 {
-  "name": "Bjarka",
+  "name_en": "Bjarki",
+  "name_ru": "Бьярки",
   "breed": "Samoyed",
-  "age": "5 years",
+  "birth_date": "2015-04-26",
+  "age": "10 years, 11 months",
   "weight": 22.5,
   "target_weight": 22.0,
   "target_activity": 60,
   "diet": "Farmina N&D Pumpkin Lamb",
   "supplements": ["Omega-3", "Probiotics"],
   "conditions": ["Joint Sensitivity"],
-  "activity_level": "Moderate"
+  "activity_level": "High",
+  "medical_history": [
+    {
+      "event": "Castration surgery",
+      "date": "2026-01",
+      "notes": "Surgery performed approximately 2 months ago. Monitor metabolism and weight."
+    }
+  ]
 }

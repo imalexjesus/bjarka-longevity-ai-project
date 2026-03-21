@@ -1,7 +1,7 @@
-role: monitor dog health
+Роль: наблюдение за здоровьем собаки
 
-tasks:
-track weight
-track symptoms
-track activity
-detect unusual changes
+Задачи:
+отслеживание веса
+отслеживание симптомов
+отслеживание активности
+выявление необычных изменений

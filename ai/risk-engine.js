@@ -58,6 +58,24 @@ class RiskEngine {
             });
         }
 
+        // 5. Lab Alerts
+        if (latest.lab_results) {
+            if (latest.lab_results.ALP_flag === "H") {
+                alerts.push({
+                    type: "WARNING",
+                    message: `Elevated ALP (${latest.lab_results.ALP} U/l). Monitor liver/bone markers.`,
+                    category: "lab"
+                });
+            }
+            if (latest.lab_results.MPV_flag === "L") {
+                alerts.push({
+                    type: "NOTE",
+                    message: `Low MPV (${latest.lab_results.MPV} fL). Normal if other platelet metrics are fine.`,
+                    category: "lab"
+                });
+            }
+        }
+
         return alerts;
     }
 }

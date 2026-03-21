@@ -56,6 +56,31 @@ class RecommendationEngine {
             });
         }
 
+        // 5. Lab-based Recommendations
+        if (latest.lab_results && latest.lab_results.ALP_flag === "H") {
+            recs.push({
+                title: "Vet Follow-up / UZI",
+                text: "Discuss elevated ALP with your vet. Consider an abdominal ultrasound (УЗИ) to check bile ducts.",
+                priority: "High"
+            });
+        }
+
+        // 6. Senior Mobility (based on 11-year age)
+        recs.push({
+            title: "Senior Mobility Check",
+            text: "Monitor how Bjarka stands on her back legs. Look for signs of stiffening or weakness.",
+            priority: "Routine"
+        });
+
+        // 7. Post-Castration Monitoring (if within 6 months)
+        if (this.profile.medical_history && this.profile.medical_history.some(h => h.event.toLowerCase().includes("castration"))) {
+            recs.push({
+                title: "Post-Surgery Metabolism",
+                text: "Castration can slow metabolism in seniors. Monitor weight strictly; you may need to reduce caloric intake by 5-10%.",
+                priority: "Medium"
+            });
+        }
+
         return recs;
     }
 }

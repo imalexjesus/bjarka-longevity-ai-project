@@ -33,6 +33,12 @@ class HealthAnalyzer {
         if (latest.appetite === "Low") score -= 20;
         if (latest.appetite === "Normal") score -= 5;
 
+        // 5. Lab Results
+        if (latest.lab_results) {
+            if (latest.lab_results.ALP_flag === "H") score -= 10;
+            if (latest.lab_results.MPV_flag === "L") score -= 5;
+        }
+
         return Math.max(0, Math.min(100, score));
     }
 

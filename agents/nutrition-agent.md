@@ -1,6 +1,6 @@
-role: analyze dog diet
+Роль: анализ рациона собак
 
-tasks:
-evaluate dog food
-suggest supplements
-optimize nutrition
+Задачи:
+оценка корма для собак
+рекомендация добавок
+оптимизация питания
