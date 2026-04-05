@@ -1,0 +1,14 @@
+{
+  "name": "bjarki-longevity-ai",
+  "version": "1.0.0",
+  "description": "Bjarki Longevity AI Project Frontend",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve dashboard",
+    "build": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }; New-Item -ItemType Directory -Path dist; Copy-Item -Path dashboard/* -Destination dist -Recurse -Force; Copy-Item -Path dashboard/ai/* -Destination dist/ai -Recurse -Force",
+    "deploy:firebase": "firebase deploy"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  }
+}

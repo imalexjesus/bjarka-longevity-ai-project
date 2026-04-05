@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Здоровье Бьярки | Longevity AI</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- TOP NAVIGATION -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <h2>BJARKI'S HEALTH DASHBOARD</h2>
+                <div class="nav-links">
+                    <a href="#" id="nav-dashboard" class="active">Дашборд</a>
+                    <a href="#" id="nav-history">История</a>
+                    <a href="#" id="nav-diet">Диета</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span id="current-date" class="date-display"></span>
+                <button id="theme-toggle" class="theme-btn" title="Переключить тему">🌙</button>
+            </div>
+        </nav>
+
+        <div id="dashboard-view" class="view">
+            <div class="dashboard-grid">
+                
+                <!-- LEFT COLUMN -->
+                <div class="col-left">
+                    <!-- Profile Card -->
+                    <div class="widget profile-widget">
+                        <div class="profile-header">
+                            <div class="avatar">🐾</div>
+                            <div class="profile-info">
+                                <h1>Бьярки</h1>
+                                <p>Возраст: 10л 8м | Вес: 31.0 кг</p>
+                                <div id="risk-level" class="risk-badge">Оценка риска...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Health Gauge -->
+                    <div class="widget health-widget">
+                        <h3>ОБЩИЙ ИНДЕКС ЗДОРОВЬЯ</h3>
+                        <div class="score-circle">
+                            <span class="score-value" id="health-score-val">--</span>
+                        </div>
+                        <p id="score-explanation" class="text-sm">Аналитика загружается...</p>
+                    </div>
+                    
+                    <!-- Risk Factors -->
+                    <div class="widget">
+                        <h3>ФАКТОРЫ РИСКА</h3>
+                        <div id="risk-factors" class="text-sm">Ожидание...</div>
+                    </div>
+                </div>
+
+                <!-- CENTER COLUMN -->
+                <div class="col-center">
+                    <!-- Top Widgets Row -->
+                    <div class="center-top-row">
+                        <!-- Form Widget -->
+                        <div class="widget form-widget">
+                            <h3>ДОБАВИТЬ ЗАПИСЬ</h3>
+                            <form id="log-form" class="compact-form">
+                                <div class="form-row">
+                                    <div class="input-wrap">
+                                        <label>Вес (кг)</label>
+                                        <input type="number" step="0.1" id="weight-input" placeholder="27.5" required>
+                                    </div>
+                                    <div class="input-wrap">
+                                        <label>Акт. (мин)</label>
+                                        <input type="number" id="activity-input" placeholder="45" required>
+                                    </div>
+                                </div>
+                                <div class="input-wrap">
+                                    <label>Симптомы</label>
+                                    <input type="text" id="symptoms-input" placeholder="Хромота, вялость...">
+                                </div>
+                                <button type="submit" class="submit-btn">ОБНОВИТЬ</button>
+                            </form>
+                        </div>
+
+                        <!-- Lab Analytics Widget -->
+                        <div class="widget lab-widget">
+                            <h3>ПОСЛЕДНИЕ АНАЛИЗЫ</h3>
+                            <div id="lab-results-container" class="lab-compact"></div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Widget -->
+                    <div class="widget chart-widget">
+                        <h3>ТРЕНД ВЕСА (КГ)</h3>
+                        <div class="chart-container">
+                            <canvas id="weightChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="widget rec-widget">
+                        <h3>ПЕРСОНАЛЬНЫЕ РЕКОМЕНДАЦИИ</h3>
+                        <div id="recommendations-container" class="recommendation-grid-compact">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="col-right">
+                    <div class="widget alerts-widget">
+                        <h3>СРОЧНЫЕ АЛЕРТЫ</h3>
+                        <div id="alert-list" class="alert-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW VIEWS -->
+        <div id="history-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget">
+                    <h3>ИСТОРИЯ ЛОГОВ</h3>
+                    <div id="history-table-container">
+                        <!-- Injected via app.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="diet-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget">
+                    <h3>ПЛАН ПИТАНИЯ</h3>
+                    <div id="diet-details">
+                        <!-- Injected via app.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

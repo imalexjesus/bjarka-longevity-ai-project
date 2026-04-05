@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  bjarki-dashboard:
+    build: .
+    ports:
+      - "9123:3000"
+    restart: always
+    container_name: bjarki-longevity-dashboard
