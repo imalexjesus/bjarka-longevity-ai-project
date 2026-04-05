@@ -1,143 +1,132 @@
 /**
- * Grooming Guide Logic
- * Provides interactive data and instructions for grooming tools.
+ * Professional Grooming Guide for Samoyeds
+ * Based on breed standards and "Line Brushing" techniques.
  */
 
-const groomingData = {
-    slicker: {
-        name: "ИНСТРУКЦИЯ: ПУХОДЕРКА (SLICKER)",
-        description: "Для глубокого вычесывания подшерстка и удаления мертвых волос.",
-        steps: [
-            {
-                title: "1. ПОСЛОЙНАЯ ПРОРАБОТКА",
-                text: "Разделите шерсть горизонтально. Чешите снизу вверх, слой за слоем.",
-                points: [{x: 400, y: 300}, {x: 400, y: 150}],
-                zoom: { text: "Угол 45° к коже.", svg: '<path d="M10,80 L50,40 L90,80" stroke="#0ea5e9" stroke-width="4" fill="none"/>' }
-            },
-            {
-                title: "2. ВОРОТНИК (ШЕЯ)",
-                text: "У самоедов самая мощная грива. Чешите круговыми движениями от ушей к лопаткам.",
-                points: [{x: 200, y: 180}, {x: 350, y: 220}]
-            },
-            {
-                title: "3. ПУШИСТЫЙ ХВОСТ",
-                text: "Хвост вычесывается от основания к кончику, очень аккуратно, чтобы не выдрать остевой волос.",
-                points: [{x: 650, y: 200}, {x: 750, y: 120}]
-            }
-        ]
+export const groomingZones = {
+    "1": { 
+        name: "Уши и Голова", 
+        text: "Зона за ушами — самое нежное место, где чаще всего образуются колтуны. Используйте гребень с вращающимися зубьями. Проверяйте зону пальцами перед расчесыванием.",
+        tool: "comb"
     },
-    comb: {
-        name: "ИНСТРУКЦИЯ: ГРЕБЕНЬ (COMB)",
-        description: "Контрольный инструмент для поиска колтунов.",
-        steps: [
-            {
-                title: "ЗОНА ЗА УШАМИ",
-                text: "Самое нежное место, где чаще всего образуются колтуны. Используйте гребень с вращающимися зубьями.",
-                points: [{x: 170, y: 120}, {x: 130, y: 140}],
-                zoom: { text: "Если нашли узелок — не тяните, разберите его пальцами.", svg: '<circle cx="50" cy="50" r="30" stroke="#ef4444" stroke-width="2" fill="none"/><path d="M40,50 L60,50" stroke="#ef4444" stroke-width="4"/>' }
-            },
-            {
-                title: "ФИНИШ: ПАНТАЛОНЫ",
-                text: "Проверьте гребнем 'штаны' на задних лапах. Шерсть должна рассыпаться как облако.",
-                points: [{x: 550, y: 400}, {x: 600, y: 500}]
-            }
-        ]
+    "2": { 
+        name: "Воротник (Ruff)", 
+        text: "Самая густая часть меха. Применяйте технику 'Line Brushing': одной рукой раздвигайте шерсть до кожи, другой — вычесывайте пуходеркой слой за слоем снизу вверх.",
+        tool: "slicker"
     },
-    undecoat: {
-        name: "ИНСТРУКЦИЯ: ГРАБЛИ (UNDERCOAT RAKE)",
-        description: "Для удаления линяющего подшерстка в период активной линьки.",
-        steps: [
-            {
-                title: "РАБОТА С ПОДШЕРСТКОМ",
-                text: "Двигайтесь по росту шерсти, не нажимая сильно на инструмент.",
-                points: [{x: 300, y: 100}, {x: 450, y: 150}],
-                zoom: { text: "Грабли должны плавно скользить, зацепляя только 'лишний' пух.", svg: '<rect x="20" y="40" width="60" height="20" rx="4" fill="#0ea5e9"/><path d="M30,60 L30,80 M50,60 L50,80 M70,60 L70,80" stroke="#0ea5e9" stroke-width="4"/>' }
-            }
-        ]
+    "3": { 
+        name: "Грудь и Плечи", 
+        text: "Здесь подшерсток наиболее плотный. Используйте грабли (rake), чтобы вытянуть старый пух. Двигайтесь короткими 'гребущими' движениями по направлению роста волос.",
+        tool: "rake"
+    },
+    "4": { 
+        name: "Спина и Бока", 
+        text: "Основная поверхность тела. После проработки пуходеркой обязательно проверьте глубину гребнем — он должен проходить до самой кожи без сопротивления.",
+        tool: "slicker"
+    },
+    "5": { 
+        name: "Передние Лапы", 
+        text: "Чешите против роста шерсти, чтобы придать объем и удалить мертвый волос из длинных очесов. Осторожно подстригайте шерсть между подушечками лап.",
+        tool: "slicker"
+    },
+    "6": { 
+        name: "Живот и Подмышки", 
+        text: "Зона высокого трения. Кожа здесь очень тонкая. Будьте предельно осторожны, используйте только мягкую пуходерку или разбирайте узлы руками.",
+        tool: "slicker"
+    },
+    "7": { 
+        name: "Задние Лапы (Панталоны)", 
+        text: "Место самой активной линьки. Требует тщательной проработки граблями. Шерсть должна рассыпаться как облако, не образуя 'сбитых' участков.",
+        tool: "rake"
+    },
+    "8": { 
+        name: "Хвост", 
+        text: "Никогда не используйте жесткие грабли на хвосте! Только мягкая пуходерка. Волос на хвосте растет очень долго, его потерю сложно восстановить.",
+        tool: "slicker"
     }
 };
 
-export function initGrooming(containerId) {
-    const selector = document.getElementById('tool-selector');
-    const toolCards = selector.querySelectorAll('.tool-card');
+export function initGrooming() {
+    const hotspots = document.querySelectorAll('.groom-spot');
+    const toolCards = document.querySelectorAll('.tool-card');
     
+    // Zone Hotspots logic
+    hotspots.forEach(spot => {
+        spot.addEventListener('click', () => {
+            const zoneId = spot.dataset.zone;
+            showZoneDetail(zoneId);
+            
+            // UI Feedback
+            hotspots.forEach(s => s.style.fill = 'rgba(14,165,233,0.3)');
+            spot.style.fill = 'rgba(14,165,233,0.8)';
+            
+            // Highlight matching tool
+            const zone = groomingZones[zoneId];
+            toolCards.forEach(c => {
+                c.classList.toggle('active', c.dataset.tool === zone.tool);
+            });
+        });
+    });
+
+    // Tool Cards logic
     toolCards.forEach(card => {
         card.addEventListener('click', () => {
             toolCards.forEach(c => c.classList.remove('active'));
             card.classList.add('active');
-            renderToolInstructions(card.dataset.tool);
+            renderToolContext(card.dataset.tool);
         });
     });
 
-    // Default
-    renderToolInstructions('slicker');
+    // Default view
+    renderToolContext('slicker');
 }
 
-function renderToolInstructions(toolKey) {
-    const data = groomingData[toolKey];
-    document.getElementById('selected-tool-name').textContent = data.name;
-    
+function showZoneDetail(id) {
+    const zone = groomingZones[id];
+    if (!zone) return;
+
+    const titleEl = document.getElementById('selected-tool-name');
     const overlay = document.getElementById('grooming-overlay');
-    const arrowsLayer = document.getElementById('arrows-layer');
     const zoomPanel = document.getElementById('zoom-details');
-    const zoomText = document.getElementById('zoom-text');
-    const zoomSvg = document.getElementById('zoom-svg');
 
-    // Clear previous
-    arrowsLayer.innerHTML = '';
-    overlay.innerHTML = '';
+    titleEl.textContent = `ЗОНА ${id}: ${zone.name}`;
+    overlay.innerHTML = `
+        <div class="instruction-box animated-fade">
+            <div class="instruction-title">Профессиональный совет</div>
+            <p>${zone.text}</p>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--primary-blue);">
+                Рекомендуемый инструмент: <strong>${translateTool(zone.tool)}</strong>
+            </div>
+        </div>
+    `;
+    zoomPanel.classList.add('hidden');
+}
 
-    data.steps.forEach((step, index) => {
-        // Render Hotspots and Arrows
-        if (step.points && step.points.length >= 2) {
-            const p1 = step.points[0];
-            const p2 = step.points[1];
-            
-            // Draw Arrow
-            const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            arrow.setAttribute("x1", p1.x);
-            arrow.setAttribute("y1", p1.y);
-            arrow.setAttribute("x2", p2.x);
-            arrow.setAttribute("y2", p2.y);
-            arrow.setAttribute("marker-end", "url(#arrowhead)");
-            arrow.setAttribute("class", "guide-arrow");
-            arrowsLayer.appendChild(arrow);
+function renderToolContext(toolKey) {
+    const titles = {
+        slicker: "ПУХОДЕРКА (SLICKER)",
+        comb: "ГРЕБЕНЬ (COMB)",
+        rake: "ГРАБЛИ (RAKE)"
+    };
+    const descs = {
+        slicker: "Для глубокого вычесывания подшерстка и основного объема шерсти.",
+        comb: "Контрольный инструмент для поиска скрытых колтунов и финишной отделки.",
+        rake: "Мощный инструмент для удаления вылинявшего подшерстка в период линьки."
+    };
 
-            // Draw Hotspot
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", p1.x);
-            circle.setAttribute("cy", p1.y);
-            circle.setAttribute("r", "8");
-            circle.setAttribute("class", "hotspot");
-            arrowsLayer.appendChild(circle);
-        }
+    const titleEl = document.getElementById('selected-tool-name');
+    const overlay = document.getElementById('grooming-overlay');
+    
+    titleEl.textContent = titles[toolKey] || "Инструкция";
+    overlay.innerHTML = `
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">${descs[toolKey]}</p>
+        <div class="instruction-box">
+            <p>Нажмите на <strong>синие точки</strong> на схеме собаки, чтобы узнать, как правильно обрабатывать конкретную зону этим инструментом.</p>
+        </div>
+    `;
+}
 
-        // Add Instruction Box
-        const box = document.createElement('div');
-        box.className = 'instruction-box';
-        box.style.marginBottom = '1rem';
-        box.innerHTML = `
-            <div class="instruction-title">${step.title}</div>
-            <p>${step.text}</p>
-        `;
-        overlay.appendChild(box);
-
-        // Handle Zoom
-        if (step.zoom) {
-            zoomPanel.classList.remove('hidden');
-            zoomText.textContent = step.zoom.text;
-            zoomSvg.innerHTML = step.zoom.svg;
-        } else {
-            zoomPanel.classList.add('hidden');
-        }
-    });
-
-    // Add arrowhead marker if not exists
-    if (!document.getElementById('arrowhead')) {
-        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        defs.innerHTML = `<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#0ea5e9" />
-        </marker>`;
-        document.getElementById('samoyed-map').prepend(defs);
-    }
+function translateTool(key) {
+    const map = { slicker: "Пуходерка", comb: "Гребень", rake: "Грабли" };
+    return map[key] || key;
 }

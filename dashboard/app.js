@@ -109,6 +109,13 @@ function init() {
         handleAnalyzerSubmit();
     });
 
+    document.getElementById('btn-force-sync')?.addEventListener('click', async () => {
+        const status = document.getElementById('sync-status');
+        status.textContent = "Синхронизация...";
+        const success = await nocoService.syncAll(healthData);
+        status.textContent = success ? "✅ Данные успешно отправлены!" : "❌ Ошибка синхронизации. Проверьте ключи.";
+    });
+
     // Preset chips logic
     const presetButtons = document.querySelectorAll('.preset-btn');
     const categoryInput = document.getElementById('analyzer-categories');
@@ -301,9 +308,15 @@ window.acceptRecommendation = function(encodedRec) {
     
     localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
     
-    alert(`Товар "${rec.item}" успешно добавлен в историю покупок! В будущем ИИ будет учитывать это при рекомендациях.`);
-    
-    renderHistory(); // Refresh history view behind the scenes
+    nocoService.syncPurchase({
+        date: new Date().toISOString().split('T')[0],
+        item: rec.item,
+        category: rec.category,
+        reason: rec.reason
+    });
+
+    alert(`Товар "${rec.item}" успешно добавлен в историю покупок!`);
+    renderHistory();
 };
 
 function addManualPurchase() {
@@ -323,9 +336,22 @@ function addManualPurchase() {
     });
     
     localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+    
+    nocoService.syncPurchase({ date, item, category, reason: "Добавлено вручную" });
+
     document.getElementById('manual-purchase-form').reset();
     renderHistory();
     alert("Покупка добавлена в историю!");
+}
+
+function saveNocoConfig() {
+    const config = {
+        url: document.getElementById('noco-url').value,
+        token: document.getElementById('noco-token').value,
+        projectId: document.getElementById('noco-project').value
+    };
+    nocoService.configure(config);
+    alert("Настройки NocoDB сохранены!");
 }
 
 function renderDiet() {
@@ -367,6 +393,7 @@ function addNewLog() {
 
     healthData.logs.push(newEntry);
     localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+    nocoService.syncLog(newEntry);
     updateUI();
     document.getElementById('log-form').reset();
 }

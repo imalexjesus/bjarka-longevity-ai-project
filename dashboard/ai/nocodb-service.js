@@ -30,19 +30,32 @@ export class NocoDBService {
 
     async syncLog(logEntry) {
         if (!this.isEnabled()) return;
-        console.log("NocoDB: Syncing log entry...", logEntry);
-        // await fetch(`${this.baseUrl}/api/v1/db/data/noco/${this.projectId}/${this.tableLogs}`, { ... });
+        try {
+            await fetch(`${this.baseUrl}/api/v1/db/data/noco/${this.projectId}/${this.tableLogs}`, {
+                method: 'POST',
+                headers: { 'xc-token': this.apiToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify(logEntry)
+            });
+        } catch (e) { console.error("Sync Error:", e); }
     }
 
     async syncPurchase(purchaseEntry) {
         if (!this.isEnabled()) return;
-        console.log("NocoDB: Syncing purchase entry...", purchaseEntry);
-        // await fetch(`${this.baseUrl}/api/v1/db/data/noco/${this.projectId}/${this.tablePurchases}`, { ... });
+        try {
+            await fetch(`${this.baseUrl}/api/v1/db/data/noco/${this.projectId}/${this.tablePurchases}`, {
+                method: 'POST',
+                headers: { 'xc-token': this.apiToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify(purchaseEntry)
+            });
+        } catch (e) { console.error("Sync Error:", e); }
     }
 
-    async fetchAllLogs() {
-        if (!this.isEnabled()) return null;
-        // Logic for fetching from NocoDB to synchronize local state
+    async syncAll(data) {
+        if (!this.isEnabled()) return;
+        // Batch sync logic could go here, or just individual calls
+        for (const log of data.logs) await this.syncLog(log);
+        for (const p of data.purchases) await this.syncPurchase(p);
+        return true;
     }
 
     configure(config) {
