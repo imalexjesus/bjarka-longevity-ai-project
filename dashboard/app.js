@@ -4,7 +4,7 @@ import { getRecommendations } from './ai/recommendation-engine.js';
 import { analyzePriceList } from './ai/price-analyzer.js';
 import { initGrooming } from './ai/grooming-guide.js';
 import { nocoService } from './ai/nocodb-service.js';
-
+import { analyzeNutrition } from './ai/nutrition-analyzer.js';
 // Data from 21.03.2026 veterinary visit
 const defaultData = {
     logs: [
@@ -136,6 +136,12 @@ function init() {
     document.getElementById('manual-purchase-form').addEventListener('submit', (e) => {
         e.preventDefault();
         addManualPurchase();
+    });
+
+    // Nutrition Analyzer Form logic
+    document.getElementById('nutrition-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleNutritionSubmit();
     });
 
     Object.keys(navLinks).forEach(navId => {
@@ -274,6 +280,29 @@ async function handleAnalyzerSubmit() {
     } else {
         reader.readAsText(file);
     }
+}
+
+function handleNutritionSubmit() {
+    const ingredients = document.getElementById('nutrition-ingredients').value;
+    if (!ingredients) return;
+    
+    const analysis = analyzeNutrition(ingredients, profile);
+    
+    const resultsContainer = document.getElementById('nutrition-results');
+    resultsContainer.innerHTML = `
+        <div style="background: var(--bg-main); border-radius: 8px; padding: 1rem; border-left: 4px solid var(--primary-blue);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                <h4 style="margin:0;">Результат анализа состава</h4>
+                <div class="risk-badge" style="background: ${analysis.score > 80 ? 'var(--primary-light)' : 'rgba(239,68,68,0.1)'}; color: ${analysis.score > 80 ? 'var(--primary-blue)' : 'var(--accent-red)'}">Совместимость: ${analysis.score}/100</div>
+            </div>
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">${analysis.summary}</p>
+            <ul class="text-sm" style="padding-left: 1.5rem; margin-bottom: 0.5rem;">
+                <li><strong>Белок:</strong> ${analysis.proteinEvaluation}</li>
+                <li><strong>Добавки:</strong> ${analysis.supplementsEvaluation}</li>
+                ${analysis.ingredientsWarning.length > 0 ? `<li style="color:var(--accent-red);"><strong>Нежелательные ингредиенты:</strong> ${analysis.ingredientsWarning.join(', ')}</li>` : '<li><strong>Нежелательные ингредиенты:</strong> Не найдено</li>'}
+            </ul>
+        </div>
+    `;
 }
 
 function renderAnalyzerResults(recs) {

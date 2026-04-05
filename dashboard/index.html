@@ -170,6 +170,24 @@
                         <!-- Injected via app.js -->
                     </div>
                 </div>
+
+                <div class="widget" style="margin-top: 1.5rem;">
+                    <h3>АНАЛИЗАТОР СОСТАВА КОРМА</h3>
+                    <div class="analyzer-container">
+                        <form id="nutrition-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input" style="grid-column: span 2;">
+                                    <label>Введите ингредиенты корма (через запятую)</label>
+                                    <textarea id="nutrition-ingredients" rows="3" placeholder="Например: свежий ягненок (26%), дегидратированный ягненок (25%), сладкий картофель, рыбий жир, ..." required style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color); padding: 0.6rem; background: var(--bg-main); color: var(--text-dark);"></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-btn" style="margin-top: 10px;">АНАЛИЗИРОВАТЬ СОСТАВ</button>
+                        </form>
+                        <div id="nutrition-results" style="margin-top: 20px;">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
