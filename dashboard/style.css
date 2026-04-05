@@ -175,6 +175,19 @@ input:focus { outline: none; border-color: var(--primary-blue); }
 /* UTILS */
 .text-sm { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
 
+/* ANALYZER VIEW STYLES */
+.analyzer-container { display: flex; flex-direction: column; gap: 1.5rem; }
+.analyzer-input { flex-direction: column; }
+.analyzer-input input[type="file"] { padding: 0.8rem; background: var(--bg-main); border: 2px dashed var(--primary-blue); cursor: pointer; }
+.recommendation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.2rem; }
+.recommendation-card { background: var(--widget-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-widget); display: flex; flex-direction: column; gap: 0.8rem; border-left: 4px solid var(--primary-blue); }
+.recommendation-card h4 { font-size: 1rem; color: var(--text-dark); margin-bottom: 0.2rem; }
+.recommendation-card .price { font-weight: 800; color: var(--accent-green); font-size: 1.1rem; }
+.recommendation-card .reason { font-size: 0.85rem; color: var(--text-muted); flex-grow: 1; }
+.recommendation-card .cat-badge { display: inline-block; padding: 0.2rem 0.5rem; background: var(--primary-light); color: var(--primary-blue); border-radius: 4px; font-size: 0.7rem; font-weight: 700; align-self: flex-start; text-transform: uppercase; }
+.accept-btn { margin-top: auto; padding: 0.6rem; border-radius: 6px; border: none; background: var(--accent-green); color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.8rem; }
+.accept-btn:hover { opacity: 0.9; }
+
 /* MOBILE & RESPONSIVE */
 @media (max-width: 1200px) {
     .dashboard-grid {

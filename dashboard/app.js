@@ -1,6 +1,7 @@
 import { calculateHealthScore } from './ai/health-analyzer.js';
 import { analyzeRisk } from './ai/risk-engine.js';
 import { getRecommendations } from './ai/recommendation-engine.js';
+import { analyzePriceList } from './ai/price-analyzer.js';
 
 // Data from 21.03.2026 veterinary visit
 const defaultData = {
@@ -39,7 +40,8 @@ const defaultData = {
             },
             "mood": "recovering"
         }
-    ]
+    ],
+    purchases: [] // Хранение принятых рекомендаций
 };
 
 const profile = {
@@ -88,8 +90,14 @@ function init() {
     const navLinks = {
         'nav-dashboard': 'dashboard-view',
         'nav-history': 'history-view',
-        'nav-diet': 'diet-view'
+        'nav-diet': 'diet-view',
+        'nav-analyzer': 'analyzer-view'
     };
+
+    document.getElementById('analyzer-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleAnalyzerSubmit();
+    });
 
     Object.keys(navLinks).forEach(navId => {
         document.getElementById(navId).addEventListener('click', (e) => {
@@ -119,8 +127,9 @@ function renderHistory() {
     if (!container) return;
 
     const logs = [...healthData.logs].reverse();
+    const purchases = healthData.purchases ? [...healthData.purchases].reverse() : [];
     
-    container.innerHTML = `
+    let html = `
         <table class="history-table">
             <thead>
                 <tr>
@@ -142,7 +151,102 @@ function renderHistory() {
             </tbody>
         </table>
     `;
+
+    if (purchases.length > 0) {
+        html += `
+            <h3 style="margin-top: 2rem;">ИСТОРИЯ ПОКУПОК / РЕКОМЕНДАЦИЙ</h3>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Категория</th>
+                        <th>Товар</th>
+                        <th style="width: 40%;">Обоснование</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${purchases.map(p => `
+                        <tr>
+                            <td>${p.date}</td>
+                            <td><span class="risk-badge">${p.category}</span></td>
+                            <td><strong>${p.item}</strong></td>
+                            <td><span class="text-sm">${p.reason}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    container.innerHTML = html;
 }
+
+async function handleAnalyzerSubmit() {
+    const fileInput = document.getElementById('analyzer-file');
+    const categoriesInput = document.getElementById('analyzer-categories').value;
+    
+    if (fileInput.files.length === 0) return;
+    
+    document.getElementById('analyzer-loading').classList.remove('hidden');
+    document.getElementById('analyzer-results').innerHTML = ''; // clear
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+        const text = e.target.result;
+        
+        try {
+            // Передаем весь объект healthData (чтобы история покупок тоже была видна ИИ)
+            const recs = await analyzePriceList(text, categoriesInput, healthData, profile);
+            renderAnalyzerResults(recs);
+        } catch(err) {
+            console.error(err);
+            document.getElementById('analyzer-results').innerHTML = '<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа данных.</p>';
+        } finally {
+            document.getElementById('analyzer-loading').classList.add('hidden');
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+function renderAnalyzerResults(recs) {
+    const container = document.getElementById('analyzer-results');
+    if (recs.length === 0) {
+        container.innerHTML = '<p class="text-sm">Подходящих товаров не найдено.</p>';
+        return;
+    }
+    
+    container.innerHTML = recs.map((r) => `
+        <div class="recommendation-card">
+            <span class="cat-badge">${r.category}</span>
+            <h4>${r.item}</h4>
+            <div class="price">${r.price}</div>
+            <div class="reason">${r.reason}</div>
+            <button class="accept-btn" onclick="acceptRecommendation('${encodeURIComponent(JSON.stringify(r))}')">Принять рекомендацию</button>
+        </div>
+    `).join('');
+}
+
+window.acceptRecommendation = function(encodedRec) {
+    const rec = JSON.parse(decodeURIComponent(encodedRec));
+    
+    if (!healthData.purchases) healthData.purchases = [];
+    
+    healthData.purchases.push({
+        date: new Date().toISOString().split('T')[0],
+        item: rec.item,
+        category: rec.category,
+        reason: rec.reason
+    });
+    
+    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+    
+    alert(`Товар "${rec.item}" успешно добавлен в историю покупок! В будущем ИИ будет учитывать это при рекомендациях.`);
+    
+    renderHistory(); // Refresh history view behind the scenes
+};
 
 function renderDiet() {
     const container = document.getElementById('diet-details');

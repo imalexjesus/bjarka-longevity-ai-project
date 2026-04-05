@@ -18,6 +18,7 @@
                     <a href="#" id="nav-dashboard" class="active">Дашборд</a>
                     <a href="#" id="nav-history">История</a>
                     <a href="#" id="nav-diet">Диета</a>
+                    <a href="#" id="nav-analyzer">Прайсы</a>
                 </div>
             </div>
             <div class="nav-right">
@@ -137,6 +138,35 @@
                     <h3>ПЛАН ПИТАНИЯ</h3>
                     <div id="diet-details">
                         <!-- Injected via app.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analyzer-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget">
+                    <h3>АНАЛИЗАТОР ПРАЙС-ЛИСТОВ</h3>
+                    <div class="analyzer-container">
+                        <form id="analyzer-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input">
+                                    <label>Интересующие категории</label>
+                                    <input type="text" id="analyzer-categories" placeholder="Например: игрушки, влажный корм, лакомства" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input">
+                                    <label>Файл прайс-листа (TXT или CSV)</label>
+                                    <input type="file" id="analyzer-file" accept=".txt,.csv" required>
+                                </div>
+                            </div>
+                            <button type="submit" id="analyzer-submit" class="submit-btn" style="margin-top: 10px;">АНАЛИЗИРОВАТЬ</button>
+                        </form>
+                        <div id="analyzer-loading" class="hidden" style="margin-top: 15px; text-align: center;">Анализируем данные с учетом профиля здоровья...</div>
+                        <div id="analyzer-results" class="recommendation-grid" style="margin-top: 20px;">
+                            <!-- Injected via app.js -->
+                        </div>
                     </div>
                 </div>
             </div>
