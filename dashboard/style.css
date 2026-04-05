@@ -188,6 +188,49 @@ input:focus { outline: none; border-color: var(--primary-blue); }
 .accept-btn { margin-top: auto; padding: 0.6rem; border-radius: 6px; border: none; background: var(--accent-green); color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.8rem; }
 .accept-btn:hover { opacity: 0.9; }
 
+/* CHIPS & PRESETS */
+.category-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem; }
+.preset-btn { background: var(--bg-main); border: 1px solid var(--border-color); padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+.preset-btn:hover { background: var(--primary-light); color: var(--primary-blue); }
+.preset-btn.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+
+/* HISTORY VIEW ADDITIONAL */
+.history-layout { display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; }
+
+/* GROOMING GUIDE STYLES */
+.grooming-layout { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; }
+.tool-grid { display: flex; flex-direction: column; gap: 0.8rem; }
+.tool-card { padding: 1rem; border-radius: 12px; background: var(--bg-main); cursor: pointer; text-align: center; border: 1px solid transparent; transition: 0.2s; }
+.tool-card:hover { border-color: var(--primary-blue); }
+.tool-card.active { background: var(--primary-light); border-color: var(--primary-blue); box-shadow: 0 4px 10px var(--primary-light); }
+.tool-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.tool-card span { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-dark); }
+
+.grooming-canvas-widget { position: relative; overflow: hidden; padding: 2rem; background: radial-gradient(circle at 50% 50%, var(--widget-bg), var(--bg-main)); min-height: 550px; }
+.canvas-header { margin-bottom: 1rem; }
+
+.interactive-svg-container { position: relative; width: 100%; height: 400px; }
+#samoyed-map { width: 100%; height: 100%; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.05)); }
+
+.overlay-info { position: absolute; top: 10px; right: 10px; width: 260px; z-index: 10; pointer-events: none; }
+.instruction-box { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 16px; padding: 1.25rem; border: 1px solid var(--primary-blue); box-shadow: var(--shadow-main); animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.instruction-title { color: var(--primary-blue); font-weight: 900; font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.instruction-box p { font-size: 0.85rem; line-height: 1.5; color: var(--text-dark); }
+
+.zoom-panel { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 1rem; align-items: center; background: rgba(15, 23, 42, 0.9); color: white; padding: 1rem; border-radius: 16px; backdrop-filter: blur(15px); width: 340px; z-index: 11; animation: fadeIn 0.5s ease; border: 1px solid rgba(255,255,255,0.1); }
+.zoom-circle { width: 90px; height: 90px; border-radius: 50%; background: white; border: 3px solid var(--primary-blue); overflow: hidden; flex-shrink: 0; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); }
+.zoom-desc { font-size: 0.85rem; }
+.zoom-desc strong { color: var(--primary-blue); display: block; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ANIMATED ARROWS & HOTSPOTS */
+.guide-arrow { stroke: var(--primary-blue); stroke-width: 4; fill: none; stroke-dasharray: 12, 6; animation: dash 1.5s linear infinite; stroke-linecap: round; }
+@keyframes dash { to { stroke-dashoffset: -18; } }
+.hotspot { fill: var(--primary-blue); animation: pulse 2s infinite; cursor: pointer; }
+@keyframes pulse { 0% { r: 5; opacity: 0.8; } 50% { r: 8; opacity: 0.4; } 100% { r: 5; opacity: 0.8; } }
+
 /* MOBILE & RESPONSIVE */
 @media (max-width: 1200px) {
     .dashboard-grid {

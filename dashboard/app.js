@@ -2,6 +2,8 @@ import { calculateHealthScore } from './ai/health-analyzer.js';
 import { analyzeRisk } from './ai/risk-engine.js';
 import { getRecommendations } from './ai/recommendation-engine.js';
 import { analyzePriceList } from './ai/price-analyzer.js';
+import { initGrooming } from './ai/grooming-guide.js';
+import { nocoService } from './ai/nocodb-service.js';
 
 // Data from 21.03.2026 veterinary visit
 const defaultData = {
@@ -91,12 +93,42 @@ function init() {
         'nav-dashboard': 'dashboard-view',
         'nav-history': 'history-view',
         'nav-diet': 'diet-view',
-        'nav-analyzer': 'analyzer-view'
+        'nav-analyzer': 'analyzer-view',
+        'nav-grooming': 'grooming-view',
+        'nav-settings': 'settings-view'
     };
+
+    // Config NocoDB
+    document.getElementById('nocodb-config-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveNocoConfig();
+    });
 
     document.getElementById('analyzer-form').addEventListener('submit', (e) => {
         e.preventDefault();
         handleAnalyzerSubmit();
+    });
+
+    // Preset chips logic
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    const categoryInput = document.getElementById('analyzer-categories');
+    
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            updateCategoriesFromPresets();
+        });
+    });
+
+    function updateCategoriesFromPresets() {
+        const activeVals = Array.from(document.querySelectorAll('.preset-btn.active')).map(b => b.dataset.val);
+        categoryInput.value = activeVals.join(', ');
+    }
+
+    // Manual purchase form logic
+    document.getElementById('manual-purchase-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        addManualPurchase();
     });
 
     Object.keys(navLinks).forEach(navId => {
@@ -120,6 +152,7 @@ function switchView(viewName, navId) {
     // Specific logic per view
     if (viewName === 'history-view') renderHistory();
     if (viewName === 'diet-view') renderDiet();
+    if (viewName === 'grooming-view') initGrooming();
 }
 
 function renderHistory() {
@@ -184,6 +217,7 @@ function renderHistory() {
 async function handleAnalyzerSubmit() {
     const fileInput = document.getElementById('analyzer-file');
     const categoriesInput = document.getElementById('analyzer-categories').value;
+    const aiSource = document.getElementById('analyzer-source').value;
     
     if (fileInput.files.length === 0) return;
     
@@ -191,24 +225,48 @@ async function handleAnalyzerSubmit() {
     document.getElementById('analyzer-results').innerHTML = ''; // clear
     
     const file = fileInput.files[0];
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
     const reader = new FileReader();
     
     reader.onload = async (e) => {
-        const text = e.target.result;
+        let text = "";
+        
+        if (isExcel) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                // Собираем текст со всех листов
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+                    text += XLSX.utils.sheet_to_csv(sheet) + "\n";
+                });
+            } catch (err) {
+                console.error("Excel Error:", err);
+                document.getElementById('analyzer-results').innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка чтения Excel: ${err.message}</p>`;
+                document.getElementById('analyzer-loading').classList.add('hidden');
+                return;
+            }
+        } else {
+            text = e.target.result;
+        }
         
         try {
             // Передаем весь объект healthData (чтобы история покупок тоже была видна ИИ)
-            const recs = await analyzePriceList(text, categoriesInput, healthData, profile);
+            const recs = await analyzePriceList(text, categoriesInput, healthData, profile, aiSource);
             renderAnalyzerResults(recs);
         } catch(err) {
             console.error(err);
-            document.getElementById('analyzer-results').innerHTML = '<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа данных.</p>';
+            document.getElementById('analyzer-results').innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа: ${err.message}</p>`;
         } finally {
             document.getElementById('analyzer-loading').classList.add('hidden');
         }
     };
     
-    reader.readAsText(file);
+    if (isExcel) {
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.readAsText(file);
+    }
 }
 
 function renderAnalyzerResults(recs) {
@@ -247,6 +305,28 @@ window.acceptRecommendation = function(encodedRec) {
     
     renderHistory(); // Refresh history view behind the scenes
 };
+
+function addManualPurchase() {
+    const date = document.getElementById('purchase-date').value;
+    const category = document.getElementById('purchase-category').value;
+    const item = document.getElementById('purchase-item').value;
+    
+    if (!date || !item) return;
+    
+    if (!healthData.purchases) healthData.purchases = [];
+    
+    healthData.purchases.push({
+        date,
+        item,
+        category,
+        reason: "Добавлено вручную пользователем"
+    });
+    
+    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+    document.getElementById('manual-purchase-form').reset();
+    renderHistory();
+    alert("Покупка добавлена в историю!");
+}
 
 function renderDiet() {
     const container = document.getElementById('diet-details');

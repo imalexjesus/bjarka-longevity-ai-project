@@ -6,6 +6,7 @@
     <title>Здоровье Бьярки | Longevity AI</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -19,6 +20,8 @@
                     <a href="#" id="nav-history">История</a>
                     <a href="#" id="nav-diet">Диета</a>
                     <a href="#" id="nav-analyzer">Прайсы</a>
+                    <a href="#" id="nav-grooming">Груминг</a>
+                    <a href="#" id="nav-settings">⚙️</a>
                 </div>
             </div>
             <div class="nav-right">
@@ -123,10 +126,37 @@
         <!-- NEW VIEWS -->
         <div id="history-view" class="view hidden">
             <div class="view-content">
-                <div class="widget">
-                    <h3>ИСТОРИЯ ЛОГОВ</h3>
-                    <div id="history-table-container">
-                        <!-- Injected via app.js -->
+                <div class="history-layout">
+                    <div class="widget add-purchase-widget">
+                        <h3>ДОБАВИТЬ ПОКУПКУ ВРУЧНУЮ</h3>
+                        <form id="manual-purchase-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap">
+                                    <label>Дата</label>
+                                    <input type="date" id="purchase-date" required>
+                                </div>
+                                <div class="input-wrap">
+                                    <label>Категория</label>
+                                    <select id="purchase-category">
+                                        <option value="корм">Корм</option>
+                                        <option value="лакомства">Лакомства</option>
+                                        <option value="витамины">Витамины</option>
+                                        <option value="прочее">Прочее</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-wrap">
+                                <label>Название товара</label>
+                                <input type="text" id="purchase-item" placeholder="Напр: Farmina Puppy 12kg" required>
+                            </div>
+                            <button type="submit" class="submit-btn">ДОБАВИТЬ В ИСТОРИЮ</button>
+                        </form>
+                    </div>
+                    <div class="widget">
+                        <h3>ИСТОРИЯ ЛОГОВ И ПОКУПОК</h3>
+                        <div id="history-table-container">
+                            <!-- Injected via app.js -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -151,14 +181,32 @@
                         <form id="analyzer-form" class="compact-form">
                             <div class="form-row">
                                 <div class="input-wrap analyzer-input">
+                                    <label>Источник ИИ</label>
+                                    <select id="analyzer-source" class="analyzer-select" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark);">
+                                        <option value="offline">Эвристика (Без ИИ / Offline)</option>
+                                        <option value="gemini">Google Gemini 1.5 Flash</option>
+                                        <option value="openai">OpenAI ChatGPT (GPT-4o)</option>
+                                        <option value="perplexity">Perplexity (Deep Research)</option>
+                                        <option value="ollama">Local Ollama (Open Source)</option>
+                                    </select>
+                                </div>
+                                <div class="input-wrap analyzer-input">
                                     <label>Интересующие категории</label>
-                                    <input type="text" id="analyzer-categories" placeholder="Например: игрушки, влажный корм, лакомства" required>
+                                    <div class="category-presets" id="category-presets">
+                                        <button type="button" class="preset-btn" data-val="корм">Корм</button>
+                                        <button type="button" class="preset-btn" data-val="лакомства">Лакомства</button>
+                                        <button type="button" class="preset-btn" data-val="игрушки">Игрушки</button>
+                                        <button type="button" class="preset-btn" data-val="витамины">Витамины</button>
+                                        <button type="button" class="preset-btn" data-val="амуниция">Амуниция</button>
+                                        <button type="button" class="preset-btn" data-val="груминг">Груминг</button>
+                                    </div>
+                                    <input type="text" id="analyzer-categories" placeholder="Например: игрушки, влажный корм" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="input-wrap analyzer-input">
-                                    <label>Файл прайс-листа (TXT или CSV)</label>
-                                    <input type="file" id="analyzer-file" accept=".txt,.csv" required>
+                                    <label>Файл прайс-листа (TXT, CSV или EXCEL)</label>
+                                    <input type="file" id="analyzer-file" accept=".txt,.csv,.xlsx,.xls" required>
                                 </div>
                             </div>
                             <button type="submit" id="analyzer-submit" class="submit-btn" style="margin-top: 10px;">АНАЛИЗИРОВАТЬ</button>
@@ -168,6 +216,118 @@
                             <!-- Injected via app.js -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="grooming-view" class="view hidden">
+            <div class="view-content">
+                <div class="grooming-layout">
+                    <!-- TOOL SELECTOR (Airplane Safety Style Icons) -->
+                    <div class="tool-sidebar">
+                        <div class="widget tool-list-widget">
+                            <h3>ИНСТРУМЕНТЫ</h3>
+                            <div class="tool-grid" id="tool-selector">
+                                <div class="tool-card active" data-tool="slicker">
+                                    <div class="tool-icon">🧤</div>
+                                    <span>Пуходерка</span>
+                                </div>
+                                <div class="tool-card" data-tool="comb">
+                                    <div class="tool-icon">🪮</div>
+                                    <span>Гребень</span>
+                                </div>
+                                <div class="tool-card" data-tool="undecoat">
+                                    <div class="tool-icon">🛠️</div>
+                                    <span>Грабли</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MAIN INTERACTIVE AREA -->
+                    <div class="grooming-main">
+                        <div class="widget grooming-canvas-widget">
+                            <div class="canvas-header">
+                                <h3 id="selected-tool-name">ИНСТРУКЦИЯ: ПУХОДЕРКА (SLICKER)</h3>
+                                <p class="text-sm">Интерактивная схема вычесывания самоеда</p>
+                            </div>
+                            
+                            <div class="interactive-svg-container" id="samoyed-svg-container">
+                                <!-- Samoyed SVG with layers and arrows will be here -->
+                                <div id="grooming-overlay" class="overlay-info">
+                                    <div class="instruction-box">
+                                        <div class="instruction-title">1. НАЧАЛО: ЗАДНИЕ ЛАПЫ</div>
+                                        <p>Начинайте с нижних слоев шерсти, двигаясь снизу вверх против роста ости (но послойно).</p>
+                                    </div>
+                                </div>
+                                <svg id="samoyed-map" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <filter id="fluff" x="-10%" y="-10%" width="120%" height="120%">
+                                            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise"/>
+                                            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3"/>
+                                        </filter>
+                                    </defs>
+                                    <!-- Kawaii Samoyed Silhouette -->
+                                    <g filter="url(#fluff)">
+                                        <!-- Unified Body & Head Path -->
+                                        <path id="samoyed-body" d="M180,180 C150,140 100,120 70,150 C40,180 50,220 80,250 C90,270 100,300 100,360 C100,440 130,500 180,520 C230,540 300,530 350,510 C400,490 460,510 520,530 C590,550 640,530 680,490 C720,450 740,350 720,250 C700,150 600,120 480,130 C400,135 240,140 180,180 Z" 
+                                              fill="white" stroke="#e2e8f0" stroke-width="2"/>
+                                        <!-- Tail connected better -->
+                                        <path d="M680,260 Q750,200 700,80 Q620,30 600,180" fill="white" stroke="#e2e8f0" stroke-width="2"/>
+                                    </g>
+                                    <!-- FACE DETAILS -->
+                                    <g id="face">
+                                        <circle cx="160" cy="185" r="4" fill="#1e293b"/>
+                                        <circle cx="210" cy="185" r="4" fill="#1e293b"/>
+                                        <path d="M175,200 Q185,210 195,200" fill="none" stroke="#1e293b" stroke-width="2"/>
+                                        <path d="M180,205 Q185,215 190,205 Z" fill="#fda4af"/>
+                                        <!-- Ears -->
+                                        <path d="M140,150 L160,110 L180,145" fill="white" stroke="#e2e8f0" stroke-width="3"/>
+                                        <path d="M210,145 L230,110 L250,150" fill="white" stroke="#e2e8f0" stroke-width="3"/>
+                                    </g>
+                                    
+                                    <!-- Animated Arrows will be injected via JS -->
+                                    <g id="arrows-layer"></g>
+                                    <g id="hotspots-layer"></g>
+                                </svg>
+                            </div>
+
+                            <div class="zoom-panel hidden" id="zoom-details">
+                                <div class="zoom-circle">
+                                    <svg viewBox="0 0 100 100" id="zoom-svg">
+                                        <!-- Closeup hand-drawn detail -->
+                                    </svg>
+                                </div>
+                                <div class="zoom-desc">
+                                    <strong>ДЕТАЛИЗАЦИЯ:</strong>
+                                    <p id="zoom-text">Тут будет показан угол наклона зубьев инструмента.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="settings-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget" style="max-width: 600px; margin: 0 auto;">
+                    <h3>НАСТРОЙКИ ВНЕШНЕЙ БАЗЫ (NOCODB)</h3>
+                    <p class="text-sm">Введите данные доступа к вашей базе данных NocoDB для синхронизации.</p>
+                    <form id="nocodb-config-form" class="compact-form" style="margin-top: 20px;">
+                        <div class="input-wrap">
+                            <label>Base URL</label>
+                            <input type="text" id="noco-url" placeholder="https://noco.alexj.top">
+                        </div>
+                        <div class="input-wrap">
+                            <label>xc-token</label>
+                            <input type="password" id="noco-token" placeholder="Ваш xc-token">
+                        </div>
+                        <div class="input-wrap">
+                            <label>Project ID</label>
+                            <input type="text" id="noco-project" placeholder="p_XXXX">
+                        </div>
+                        <button type="submit" class="submit-btn" style="background:var(--text-dark)">СОХРАНИТЬ КОНФИГУРАЦИЮ</button>
+                    </form>
                 </div>
             </div>
         </div>
