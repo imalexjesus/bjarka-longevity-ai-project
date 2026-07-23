@@ -202,7 +202,34 @@ def get_ai_recommendations():
         "recommendations": recommendations.split("\n")
     }
 
-# --- LLM INTEGRATIONS (NUTRITION AND PRICE ANALYSIS) ---
+# --- CLAUDE CODE AGENTIC PATTERNS & LLM INTEGRATIONS ---
+
+TOXIC_CANINE_INGREDIENTS = {
+    "ксилит": "Ксилит (Xylitol) — вызывает смертельную гипогликемию и острую печеночную недостаточность!",
+    "xylitol": "Ксилит (Xylitol) — вызывает смертельную гипогликемию и острую печеночную недостаточность!",
+    "виноград": "Виноград — вызывает острую почечную недостаточность у собак!",
+    "изюм": "Изюм — смертельно опасен для почек собаки!",
+    "grape": "Виноград (Grapes) — вызывает острую почечную недостаточность!",
+    "raisin": "Изюм (Raisins) — вызывает острую почечную недостаточность!",
+    "шоколад": "Теобромин в шоколаде — токсичен для сердечно-сосудистой системы собак!",
+    "какао": "Какао — содержит теобромин, опасный для сердца собаки!",
+    "chocolate": "Шоколад (Chocolate) — содержит токсичный теобромин!",
+    "лук": "Лук — разрушает эритроциты (вызывает гемолитическую анемию)!",
+    "чеснок": "Чеснок — вызывает анемию и повреждение эритроцитов у собак!",
+    "onion": "Лук (Onion) — токсичен для эритроцитов собак!",
+    "garlic": "Чеснок (Garlic) — вызывает гемолитическую анемию!",
+    "макадамия": "Орехи макадамия — вызывают неврологические нарушения и слабость лап!",
+    "macadamia": "Орехи макадамия — вызывают токсический парез у собак!"
+}
+
+def stage_1_safety_classifier(ingredients_text: str) -> list:
+    """Stage 1 Fast Safety & Toxin Classifier Pattern (Claude Code Pattern 12)"""
+    text_lower = ingredients_text.lower()
+    alerts = []
+    for toxin, warning in TOXIC_CANINE_INGREDIENTS.items():
+        if toxin in text_lower:
+            alerts.append(f"🚨 **КРИТИЧЕСКИЙ ТОКСИН ОБНАРУЖЕН ({toxin.upper()})**: {warning}")
+    return alerts
 
 async def call_llm(system_prompt: str, user_prompt: str) -> str:
     gemini_key = get_setting("gemini_api_key")
@@ -237,28 +264,41 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
 async def analyze_nutrition_endpoint(ingredients: str = Form(...)):
     profile_data = get_profile()
     
-    system_prompt = (
-        "Вы — опытный ветеринарный диетолог. Проанализируйте ингредиенты собачьего корма "
-        "и определите, подходит ли этот рацион конкретной собаке. Верните подробный разбор "
-        "в красивом формате Markdown со следующими секциями:\n"
-        "1. Общая оценка корма (Premium, Normal, Low Quality)\n"
-        "2. Анализ основных белков и жиров\n"
-        "3. Подходит ли для собаки с учетом ее медицинского профиля\n"
-        "4. Обнаруженные потенциальные аллергены или нежелательные ингредиенты\n"
-        "5. Итоговый вердикт (Рекомендовано / С ограничениями / Не рекомендуется)"
+    # Stage 1: Fast Security & Toxin Classifier
+    toxin_alerts = stage_1_safety_classifier(ingredients)
+    
+    # Static Prompt Assembly (Claude Code Cache-Boundary Pattern)
+    STATIC_SYSTEM_PROMPT = (
+        "Вы — ведущий ветеринарный диетолог и эксперт по долголетию собак породы самоед.\n\n"
+        "ПРАВИЛА И ОГРАНИЧЕНИЯ (BEHAVIORAL DIRECTIVES):\n"
+        "1. Безопасность превыше всего: Проверяйте состав на скрытые искусственные химикаты (BHA/BHT, пропиленгликоль, искусственные красители).\n"
+        "2. Учитывайте профиль старшей собаки (Senior 10+): критичен контроль жиров (не более 12-14%) и белка (легкоусвояемый ягненок/рыба).\n"
+        "3. Самокритика и верификация (Verification Agent Pattern): Обязательно проверьте свой анализ на отсутствие внутренних противоречий.\n"
+        "4. Всегда возвращайте структурированный разбор в красивом формате Markdown со секциями:\n"
+        "   - 📊 Общая оценка корма (Holistic / Premium / Standard / Low Quality)\n"
+        "   - 🥩 Анализ источников белка и жиров\n"
+        "   - 🩺 Совместимость с медкартами Бьярки\n"
+        "   - ⚠️ Риски аллергенов или скрытой химии\n"
+        "   - ⚖️ Финальный экспертный вердикт"
     )
     
     user_prompt = (
-        f"Профиль собаки:\n"
+        f"--- ДИНАМИЧЕСКИЙ ПРОФИЛЬ ПАЦИЕНТА ---\n"
+        f"- Кличка: {profile_data.get('name_ru', 'Бьярки')}\n"
         f"- Порода: {profile_data.get('breed', 'Самоед')}\n"
         f"- Возраст: {profile_data.get('age', '10 лет 8 месяцев')}\n"
-        f"- Текущий вес: {profile_data.get('weight_current', 31.0)} кг (Целевой: {profile_data.get('weight_target', 25.0)} кг)\n"
-        f"- Особенности: {', '.join(profile_data.get('conditions', []))}\n\n"
-        f"Ингредиенты корма:\n{ingredients}"
+        f"- Весовой статус: {profile_data.get('weight_current', 31.0)} кг (Целевой: {profile_data.get('weight_target', 25.0)} кг, Ожирение I ст.)\n"
+        f"- Особые диагнозы: {', '.join(profile_data.get('conditions', []))}\n\n"
+        f"--- ИНГРЕДИЕНТЫ ДЛЯ АНАЛИЗА ---\n{ingredients}"
     )
 
-    result = await call_llm(system_prompt, user_prompt)
-    return {"analysis": result}
+    llm_analysis = await call_llm(STATIC_SYSTEM_PROMPT, user_prompt)
+    
+    if toxin_alerts:
+        prefix = "\n\n".join(toxin_alerts) + "\n\n---\n\n### 🤖 Экспертный ИИ-Анализ состава:\n"
+        return {"analysis": prefix + llm_analysis}
+
+    return {"analysis": llm_analysis}
 
 @app.post("/api/analyze-price")
 async def analyze_price_endpoint(
@@ -285,33 +325,33 @@ async def analyze_price_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
-    # Truncate content if too long to avoid token limits
     if len(content) > 30000:
-        content = content[:30000] + "\n...[Текст прайс-листа обрезан]..."
+        content = content[:30000] + "\n...[Текст прайс-листа обрезан для лимита токенов]..."
 
-    system_prompt = (
-        "Вы — ИИ-ассистент по ветеринарным товарам и покупкам. Проанализируйте прайс-лист "
-        "и выберите подходящие товары (лакомства, корма, игрушки или витамины) из запрошенных категорий, "
-        "которые будут безопасны и полезны для конкретной собаки с ее текущими диагнозами. "
-        "Верните результат в виде красивой таблицы Markdown с колонками:\n"
-        "- Товар\n"
-        "- Цена\n"
-        "- Категория\n"
-        "- Почему подходит / Ограничения\n"
-        "- Оценка (Рекомендовано / Избегать)"
+    STATIC_PRICE_PROMPT = (
+        "Вы — ИИ-ассистент по фильтрации ветеринарных товаров и прайс-листов.\n\n"
+        "ПРАВИЛА ОТБОРА И ВЕРИФИКАЦИИ:\n"
+        "1. Отбирайте ТОЛЬКО те товары из запрошенных категорий, которые безопасны для 10-летнего самоеда весом 31 кг.\n"
+        "2. Категорически отбраковывайте жесткие свиные уши, слишком жирные лакомства и игрушки из дешевого пластика.\n"
+        "3. Верните результат в виде Markdown-таблицы с колонками:\n"
+        "   - Товар\n"
+        "   - Цена\n"
+        "   - Категория\n"
+        "   - Почему подходит / Ограничения\n"
+        "   - Оценка (🟢 Рекомендовано / 🟡 С ограничениями / 🔴 Избегать)"
     )
 
     user_prompt = (
-        f"Интересующие категории: {categories}\n\n"
-        f"Профиль здоровья собаки:\n"
+        f"Запрошенные категории: {categories}\n\n"
+        f"Медицинские ограничения собаки:\n"
         f"- Порода: {profile_data.get('breed', 'Самоед')}\n"
         f"- Возраст: {profile_data.get('age', '10 лет 8 месяцев')}\n"
         f"- Текущий вес: {profile_data.get('weight_current', 31.0)} кг (Ожирение, цель 25.0 кг)\n"
-        f"- Состояние: {', '.join(profile_data.get('conditions', []))}\n\n"
-        f"Прайс-лист:\n{content}"
+        f"- Состояния: {', '.join(profile_data.get('conditions', []))}\n\n"
+        f"Данные прайс-листа:\n{content}"
     )
 
-    result = await call_llm(system_prompt, user_prompt)
+    result = await call_llm(STATIC_PRICE_PROMPT, user_prompt)
     return {"analysis": result}
 
 # --- KNOWLEDGE BASE ENDPOINTS ---
