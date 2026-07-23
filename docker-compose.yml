@@ -4,6 +4,8 @@ services:
   bjarki-dashboard:
     build: .
     ports:
-      - "9123:3000"
+      - "9123:8000"
     restart: always
     container_name: bjarki-longevity-dashboard
+    environment:
+      - PYTHONUNBUFFERED=1

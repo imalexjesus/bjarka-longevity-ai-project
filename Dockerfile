@@ -1,16 +1,23 @@
-FROM node:18-slim
+FROM python:3.11-slim
 
-# Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Only copy necessary files for serving
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
+COPY backend/ ./backend/
 COPY dashboard/ ./dashboard/
+COPY knowledge/ ./knowledge/
+COPY profile/ ./profile/
+COPY scripts/ ./scripts/
 
-# Install 'serve' package to serve static content
-RUN npm install -g serve
+EXPOSE 8000
 
-# Expose port 3000
-EXPOSE 3000
-
-# Start serving the dashboard
-CMD [ "serve", "-s", "dashboard", "-l", "3000" ]
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
