@@ -446,6 +446,45 @@ def get_knowledge_article(path: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading article: {str(e)}")
 
+@app.get("/api/knowledge/vector-search")
+async def vector_search_endpoint(query: str = Query(...)):
+    """Search Qdrant vector database for relevant knowledge chunks"""
+    try:
+        import math, re
+        VECTOR_SIZE = 384
+        words = re.findall(r'\w+', query.lower())
+        vec = [0.0] * VECTOR_SIZE
+        for w in words:
+            h = hash(w) % VECTOR_SIZE
+            vec[h] += 1.0
+        norm = math.sqrt(sum(x*x for x in vec))
+        if norm > 0:
+            vec = [x / norm for x in vec]
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            res = await client.post("http://192.168.90.19:6333/collections/samoyed_knowledge/points/search", json={
+                "vector": vec,
+                "limit": 5,
+                "with_payload": True
+            })
+            if res.status_code == 200:
+                data = res.json()
+                results = []
+                for hit in data.get("result", []):
+                    payload = hit.get("payload", {})
+                    results.append({
+                        "score": hit.get("score", 0.0),
+                        "file_title": payload.get("file_title", ""),
+                        "chunk_title": payload.get("chunk_title", ""),
+                        "path": payload.get("path", ""),
+                        "content": payload.get("content", "")
+                    })
+                return {"query": query, "results": results}
+    except Exception as e:
+        print(f"Vector search failed: {e}")
+
+    return {"query": query, "results": []}
+
 # --- SERVE FRONTEND ---
 
 # Mount dashboard files
