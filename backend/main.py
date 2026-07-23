@@ -18,10 +18,18 @@ PROFILE_PATH = os.path.join(BASE_DIR, "profile", "bjarki-profile.json")
 
 # Import the AI Layer agents
 import sys
-sys.path.append(os.path.join(BASE_DIR, "agents", "ai_layer"))
-from health_analyzer import HealthAnalyzer
-from risk_engine import RiskEngine
-from recommendation_system import RecommendationSystem
+AGENTS_DIR = os.path.join(BASE_DIR, "agents", "ai_layer")
+if os.path.exists(AGENTS_DIR) and AGENTS_DIR not in sys.path:
+    sys.path.append(AGENTS_DIR)
+
+try:
+    from health_analyzer import HealthAnalyzer
+    from risk_engine import RiskEngine
+    from recommendation_system import RecommendationSystem
+except ImportError:
+    HealthAnalyzer = None
+    RiskEngine = None
+    RecommendationSystem = None
 
 app = FastAPI(title="Bjarki Longevity AI Server")
 

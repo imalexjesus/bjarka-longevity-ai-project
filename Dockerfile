@@ -11,12 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
+# Copy all application directories
 COPY backend/ ./backend/
 COPY dashboard/ ./dashboard/
 COPY knowledge/ ./knowledge/
 COPY profile/ ./profile/
 COPY scripts/ ./scripts/
+COPY agents/ ./agents/
 
 EXPOSE 8000
 
