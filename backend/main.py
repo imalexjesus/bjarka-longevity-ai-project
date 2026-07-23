@@ -485,6 +485,61 @@ async def vector_search_endpoint(query: str = Query(...)):
 
     return {"query": query, "results": []}
 
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/ai-chat")
+async def ai_chat_endpoint(req: ChatRequest):
+    user_msg = req.message.strip()
+    if not user_msg:
+        raise HTTPException(status_code=400, detail="Message is empty")
+
+    profile_data = get_profile()
+    
+    # 1. Retrieve relevant knowledge chunks via Qdrant vector search
+    vector_search_res = await vector_search_endpoint(user_msg)
+    retrieved_chunks = vector_search_res.get("results", [])
+    
+    context_str = ""
+    sources = []
+    seen_paths = set()
+    
+    for hit in retrieved_chunks:
+        context_str += f"\n--- ИСТОЧНИК: {hit['file_title']} ({hit['chunk_title']}) ---\n{hit['content']}\n"
+        if hit['path'] and hit['path'] not in seen_paths:
+            seen_paths.add(hit['path'])
+            sources.append({
+                "path": hit['path'],
+                "title": hit['file_title']
+            })
+
+    STATIC_CHAT_PROMPT = (
+        "Вы — ИИ-Консультант ветеринарной платформы долголетия Бьярки (Bjarki Longevity AI).\n"
+        "ВАШИ ПРИНЦИПЫ И ИНСТРУКЦИИ:\n"
+        "1. Отвечайте вежливо, профессионально и заботливо, опираясь на ветеринарную медицину и особенности породистых самоедов.\n"
+        "2. Всегда учитывайте профиль Бьярки (старшая собака 10 лет 8 месяцев, вес 31 кг, цель 25 кг, кастрация, контроль суставов и кожи).\n"
+        "3. Если в контексте есть выдержки из базы знаний, используйте их для формулирования ответа и давайте практические шаги.\n"
+        "4. Форматируйте ответ в красивом Markdown с эмодзи и списком конкретных рекомендаций."
+    )
+
+    user_prompt = (
+        f"--- ПРОФИЛЬ ПАЦИЕНТА БЬЯРКИ ---\n"
+        f"- Порода: {profile_data.get('breed', 'Самоед')}\n"
+        f"- Возраст: {profile_data.get('age', '10 лет 8 месяцев')}\n"
+        f"- Вес: {profile_data.get('weight_current', 31.0)} кг (Цель: {profile_data.get('weight_target', 25.0)} кг)\n"
+        f"- Особенности: {', '.join(profile_data.get('conditions', []))}\n\n"
+        f"--- ВАЖНЫЕ ВЫДЕРЖКИ ИЗ БАЗЫ ЗНАНИЙ (QDRANT VECTOR SEARCH) ---\n"
+        f"{context_str if context_str else 'Специальные выдержки не найдены, ответьте на основе глобальных ветеринарных знаний.'}\n\n"
+        f"--- ВОПРОС ПОЛЬЗОВАТЕЛЯ ---\n{user_msg}"
+    )
+
+    reply = await call_llm(STATIC_CHAT_PROMPT, user_prompt)
+
+    return {
+        "reply": reply,
+        "sources": sources
+    }
+
 # --- SERVE FRONTEND ---
 
 # Mount dashboard files

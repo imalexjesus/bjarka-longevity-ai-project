@@ -17,7 +17,9 @@ import {
   HelpCircle,
   Clock,
   ArrowRight,
-  TrendingDown
+  TrendingDown,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 
 export default function App() {
@@ -87,6 +89,59 @@ export default function App() {
   const [activeArticle, setActiveArticle] = useState(null);
   const [articleLoading, setArticleLoading] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
+
+  // AI Consultant Chat state
+  const [chatMessages, setChatMessages] = useState([
+    {
+      sender: 'ai',
+      text: 'Здравствуйте! Я ветеринарный ИИ-Консультант Бьярки. Я подключен к вашей векторной базе знаний Qdrant (51 статья) и медицинской карте. Задайте мне любой вопрос по здоровью, грумингу или рациону!',
+      sources: []
+    }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleSendChatMessage = async (e, customQuery = null) => {
+    if (e) e.preventDefault();
+    const query = (customQuery || chatInput).trim();
+    if (!query || chatLoading) return;
+
+    const userMsg = { sender: 'user', text: query, sources: [] };
+    setChatMessages(prev => [...prev, userMsg]);
+    if (!customQuery) setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(prev => [...prev, {
+          sender: 'ai',
+          text: data.reply || 'Извините, не удалось получить ответ от ИИ.',
+          sources: data.sources || []
+        }]);
+      } else {
+        setChatMessages(prev => [...prev, {
+          sender: 'ai',
+          text: '⚠️ Ошибка обращения к ИИ-консультанту. Проверьте настройки API ключа.',
+          sources: []
+        }]);
+      }
+    } catch (err) {
+      console.error(err);
+      setChatMessages(prev => [...prev, {
+        sender: 'ai',
+        text: '⚠️ Ошибка подключения к серверу.',
+        sources: []
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   const masterGroomingTools = [
     { id: "tool-1", name: "Show Tech Tuffer Than Tangles (Large)", category: "Пуходерки", priceUah: 1280, priceEur: 19, priceUsd: 22, isEssential: true },
@@ -660,6 +715,14 @@ export default function App() {
               <BookOpen style={{ width: '1rem', height: '1rem' }} />
               Самоедопедия
             </button>
+
+            <button 
+              onClick={() => setActiveTab('consultant')}
+              className={`nav-item ${activeTab === 'consultant' ? 'active' : ''}`}
+            >
+              <MessageSquare style={{ width: '1rem', height: '1rem' }} />
+              ИИ-Консультант (RAG)
+            </button>
             
             <button 
               onClick={() => setActiveTab('prices')}
@@ -1181,6 +1244,106 @@ export default function App() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: AI CONSULTANT (QDRANT RAG CHAT) */}
+        {activeTab === 'consultant' && (
+          <div className="space-y-6 animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: 'calc(100vh - 120px)' }}>
+            <div className="page-header" style={{ marginBottom: 0 }}>
+              <div className="page-title">
+                <h2>ИИ-КОНСУЛЬТАНТ БЬЯРКИ (QDRANT RAG)</h2>
+                <p>Умный помощник на базе векторной базы знаний самоеда и медицинской карты</p>
+              </div>
+            </div>
+
+            {/* Quick Prompt Chips */}
+            <div className="category-pills no-print">
+              <button onClick={(e) => handleSendChatMessage(e, "Как защитить лапы и живот Бьярки от опасных устюков летом?")} className="category-pill">
+                🌾 Защита от устюков
+              </button>
+              <button onClick={(e) => handleSendChatMessage(e, "Какая схема мытья и отбеливания шерсти самоеда безопасна?")} className="category-pill">
+                🧼 Белоснежная шерсть
+              </button>
+              <button onClick={(e) => handleSendChatMessage(e, "Как правильно выдувать подшерсток компрессором?")} className="category-pill">
+                💨 Выдув компрессором
+              </button>
+              <button onClick={(e) => handleSendChatMessage(e, "Какими ножницами выстригать 'кошачью лапку'?")} className="category-pill">
+                ✂️ Стрижка лап
+              </button>
+            </div>
+
+            {/* Chat Box Container */}
+            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '1.25rem' }}>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.5rem', marginBottom: '1rem' }}>
+                {chatMessages.map((msg, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: msg.sender === 'user' ? '75%' : '85%',
+                      background: msg.sender === 'user' ? 'var(--primary-glow)' : 'rgba(15, 23, 42, 0.6)',
+                      border: msg.sender === 'user' ? '1px solid var(--primary)' : '1px solid var(--border-glass)',
+                      borderRadius: msg.sender === 'user' ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                      padding: '1rem 1.25rem',
+                      fontSize: '0.85rem',
+                      lineHeight: '1.5',
+                      color: msg.sender === 'user' ? '#ffffff' : 'var(--text-main)',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.35rem', color: msg.sender === 'user' ? 'var(--primary)' : '#0ea5e9' }}>
+                      {msg.sender === 'user' ? 'ВЫ' : '🤖 ИИ-КОНСУЛЬТАНТ ВЕТЕРИНАРИИ'}
+                    </div>
+                    <div>{renderMarkdown(msg.text)}</div>
+                    
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-glass)', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>📚 Источники из Qdrant:</span>
+                        {msg.sources.map((src, i) => (
+                          <button 
+                            key={i}
+                            onClick={() => openArticle(src.path, src.title)}
+                            className="category-pill"
+                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.65rem', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                          >
+                            📖 {src.title}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div style={{ alignSelf: 'flex-start', background: 'rgba(15, 23, 42, 0.4)', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles className="animate-spin" style={{ width: '1rem', height: '1rem' }} />
+                    Выполняем векторный поиск Qdrant и формируем ответ ИИ...
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input Form */}
+              <form onSubmit={handleSendChatMessage} style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1rem' }}>
+                <input 
+                  type="text"
+                  placeholder="Задайте вопрос по уходу, здоровью, выдуву шерсти, устюкам или питанию Бьярки..."
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  className="form-input"
+                  style={{ flex: 1, fontSize: '0.85rem' }}
+                  disabled={chatLoading}
+                />
+                <button 
+                  type="submit" 
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="btn-primary"
+                  style={{ padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Send style={{ width: '0.9rem', height: '0.9rem' }} />
+                  Отправить
+                </button>
+              </form>
             </div>
           </div>
         )}

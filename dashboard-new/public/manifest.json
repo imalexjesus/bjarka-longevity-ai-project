@@ -1,0 +1,17 @@
+{
+  "name": "Bjarki Longevity AI",
+  "short_name": "Bjarki AI",
+  "description": "Персональная ветеринарная система ухода и долголетия самоеда Бьярки",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b101d",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/samoyed-profile.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
