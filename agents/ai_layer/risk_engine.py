@@ -48,5 +48,7 @@ class RiskEngine:
         return "\n".join(risk_report)
 
 if __name__ == "__main__":
-    engine = RiskEngine(r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\profile\bjarka-profile.json")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    profile_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "profile", "bjarki-profile.json")
+    engine = RiskEngine(profile_path)
     print(engine.evaluate_risks())

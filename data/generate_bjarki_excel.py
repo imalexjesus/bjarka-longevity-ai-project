@@ -2,8 +2,8 @@
 import pandas as pd
 import json
 
-file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
-out_file = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\Bjarka_Selection_April_2026.xlsx"
+file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
+out_file = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\bjarki_Selection_April_2026.xlsx"
 
 try:
     # Read headers

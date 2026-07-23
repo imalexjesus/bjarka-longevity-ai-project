@@ -1,4 +1,4 @@
-Bjarka Health Dashboard
+bjarki Health Dashboard
 
 Track:
 - Weight

@@ -1,6 +1,7 @@
-Bjarka Health Dashboard
+bjarki Health Dashboard
 
 Track:
+
 - Weight
 - Activity
 - Appetite

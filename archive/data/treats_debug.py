@@ -2,8 +2,8 @@
 import pandas as pd
 import json
 
-file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
-output_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\treats_debug.json"
+file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
+output_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\treats_debug.json"
 
 try:
     # Read the first 10 rows and print them out

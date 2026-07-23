@@ -1,11 +1,9 @@
 import { calculateHealthScore } from './ai/health-analyzer.js';
 import { analyzeRisk } from './ai/risk-engine.js';
 import { getRecommendations } from './ai/recommendation-engine.js';
-import { analyzePriceList } from './ai/price-analyzer.js';
 import { initGrooming } from './ai/grooming-guide.js';
-import { nocoService } from './ai/nocodb-service.js';
-import { analyzeNutrition } from './ai/nutrition-analyzer.js';
-// Data from 21.03.2026 veterinary visit
+
+// Default data as a fallback if the API is down
 const defaultData = {
     logs: [
         {
@@ -23,30 +21,31 @@ const defaultData = {
             appetite: "Good"
         },
         {
-            "date": "2026-03-21",
-            "weight": 31.0,
-            "activity_minutes": 0,
-            "symptoms": ["post_surgery_recovery", "stitches"],
-            "medications": [
-            "Синулокс 250мг (1т х 2р)", 
-            "Хлоргексидин 0.05% (обработка швов)",
-            "Габапентин 300мг (по назначению)"
+            date: "2026-03-21",
+            weight: 31.0,
+            activity_minutes: 0,
+            symptoms: ["post_surgery_recovery", "stitches"],
+            medications: [
+                "Синулокс 250мг (1т х 2р)", 
+                "Хлоргексидин 0.05% (обработка швов)",
+                "Габапентин 300мг (по назначению)"
             ],
-            "diet": "Recovery Diet",
-            "temperature": 38.0,
-            "lab_results": {
+            diet: "Recovery Diet",
+            temperature: 38.0,
+            lab_results: {
                 "ALP": 88,
                 "MPV": 7.7,
                 "conclusion": "Для 10 лет 8 месяцев результаты оптимистичны. ALP (88) незначительно повышен. ЭХО сердца: норма для возраста, незначительная гипертрофия.",
                 "notes": "Хирургическое удаление опухоли, биохимия и ОАК в норме."
             },
-            "mood": "recovering"
+            mood: "recovering"
         }
     ],
-    purchases: [] // Хранение принятых рекомендаций
+    purchases: []
 };
 
-const profile = {
+let healthData = defaultData;
+let profile = {
     name: "Бьярки",
     breed: "Самоед",
     sex: "Female",
@@ -57,7 +56,6 @@ const profile = {
     diet: "Farmina N&D Pumpkin Lamb"
 };
 
-let healthData = defaultData; // Force override for demo of new data. Use JSON.parse(localStorage.getItem('bjarki_health_data')) later.
 let chart;
 
 // --- THEME LOGIC ---
@@ -75,12 +73,34 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('dark-theme', isDarkTheme);
         themeBtn.textContent = isDarkTheme ? '☀️' : '🌙';
         localStorage.setItem(THEME_KEY, isDarkTheme ? 'dark' : 'light');
-        renderChart(); // redraw chart to update colors
+        renderChart(); 
     });
 });
 
-function init() {
+async function loadData() {
+    try {
+        const [profileRes, logsRes, purchasesRes] = await Promise.all([
+            fetch('/api/profile'),
+            fetch('/api/logs'),
+            fetch('/api/purchases')
+        ]);
+        
+        if (profileRes.ok) profile = await profileRes.json();
+        if (logsRes.ok) healthData.logs = await logsRes.json();
+        if (purchasesRes.ok) healthData.purchases = await purchasesRes.json();
+        
+        localStorage.setItem('bjarki_profile', JSON.stringify(profile));
+        localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+    } catch (e) {
+        console.warn("Using offline storage fallback:", e);
+        profile = JSON.parse(localStorage.getItem('bjarki_profile')) || profile;
+        healthData = JSON.parse(localStorage.getItem('bjarki_health_data')) || defaultData;
+    }
     updateUI();
+}
+
+function init() {
+    loadData();
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     document.getElementById('log-form').addEventListener('submit', (e) => {
@@ -98,22 +118,20 @@ function init() {
         'nav-settings': 'settings-view'
     };
 
-    // Config NocoDB
-    document.getElementById('nocodb-config-form')?.addEventListener('submit', (e) => {
+    // Config SQLite and Gemini/Ollama
+    document.getElementById('settings-config-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        saveNocoConfig();
+        saveSystemSettings();
+    });
+
+    document.getElementById('profile-edit-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveProfileEdit();
     });
 
     document.getElementById('analyzer-form').addEventListener('submit', (e) => {
         e.preventDefault();
         handleAnalyzerSubmit();
-    });
-
-    document.getElementById('btn-force-sync')?.addEventListener('click', async () => {
-        const status = document.getElementById('sync-status');
-        status.textContent = "Синхронизация...";
-        const success = await nocoService.syncAll(healthData);
-        status.textContent = success ? "✅ Данные успешно отправлены!" : "❌ Ошибка синхронизации. Проверьте ключи.";
     });
 
     // Preset chips logic
@@ -153,19 +171,16 @@ function init() {
 }
 
 function switchView(viewName, navId) {
-    // Hide all views
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-    // Remove active class from nav
     document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
 
-    // Show target view
     document.getElementById(viewName).classList.remove('hidden');
     document.getElementById(navId).classList.add('active');
 
-    // Specific logic per view
     if (viewName === 'history-view') renderHistory();
     if (viewName === 'diet-view') renderDiet();
     if (viewName === 'grooming-view') initGrooming();
+    if (viewName === 'settings-view') renderSettings();
 }
 
 function renderHistory() {
@@ -191,7 +206,7 @@ function renderHistory() {
                         <td>${log.date}</td>
                         <td>${log.weight} кг</td>
                         <td>${log.activity_minutes} мин</td>
-                        <td>${log.symptoms.length > 0 ? log.symptoms.join(', ') : '---'}</td>
+                        <td>${log.symptoms && log.symptoms.length > 0 ? log.symptoms.join(', ') : '---'}</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -207,7 +222,6 @@ function renderHistory() {
                         <th>Дата</th>
                         <th>Категория</th>
                         <th>Товар</th>
-                        <th style="width: 40%;">Обоснование</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -216,7 +230,6 @@ function renderHistory() {
                             <td>${p.date}</td>
                             <td><span class="risk-badge">${p.category}</span></td>
                             <td><strong>${p.item}</strong></td>
-                            <td><span class="text-sm">${p.reason}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -230,157 +243,145 @@ function renderHistory() {
 async function handleAnalyzerSubmit() {
     const fileInput = document.getElementById('analyzer-file');
     const categoriesInput = document.getElementById('analyzer-categories').value;
-    const aiSource = document.getElementById('analyzer-source').value;
     
     if (fileInput.files.length === 0) return;
     
     document.getElementById('analyzer-loading').classList.remove('hidden');
-    document.getElementById('analyzer-results').innerHTML = ''; // clear
+    document.getElementById('analyzer-results').innerHTML = ''; 
     
-    const file = fileInput.files[0];
-    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-    const reader = new FileReader();
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('categories', categoriesInput);
     
-    reader.onload = async (e) => {
-        let text = "";
-        
-        if (isExcel) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                // Собираем текст со всех листов
-                workbook.SheetNames.forEach(sheetName => {
-                    const sheet = workbook.Sheets[sheetName];
-                    text += XLSX.utils.sheet_to_csv(sheet) + "\n";
-                });
-            } catch (err) {
-                console.error("Excel Error:", err);
-                document.getElementById('analyzer-results').innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка чтения Excel: ${err.message}</p>`;
-                document.getElementById('analyzer-loading').classList.add('hidden');
-                return;
-            }
-        } else {
-            text = e.target.result;
-        }
-        
-        try {
-            // Передаем весь объект healthData (чтобы история покупок тоже была видна ИИ)
-            const recs = await analyzePriceList(text, categoriesInput, healthData, profile, aiSource);
-            renderAnalyzerResults(recs);
-        } catch(err) {
-            console.error(err);
-            document.getElementById('analyzer-results').innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа: ${err.message}</p>`;
-        } finally {
-            document.getElementById('analyzer-loading').classList.add('hidden');
-        }
-    };
-    
-    if (isExcel) {
-        reader.readAsArrayBuffer(file);
-    } else {
-        reader.readAsText(file);
+    try {
+        const response = await fetch('/api/analyze-price', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        renderMarkdown(data.analysis, 'analyzer-results');
+    } catch(err) {
+        console.error(err);
+        document.getElementById('analyzer-results').innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа: ${err.message}</p>`;
+    } finally {
+        document.getElementById('analyzer-loading').classList.add('hidden');
     }
 }
 
-function handleNutritionSubmit() {
+async function handleNutritionSubmit() {
     const ingredients = document.getElementById('nutrition-ingredients').value;
     if (!ingredients) return;
     
-    const analysis = analyzeNutrition(ingredients, profile);
-    
     const resultsContainer = document.getElementById('nutrition-results');
-    resultsContainer.innerHTML = `
-        <div style="background: var(--bg-main); border-radius: 8px; padding: 1rem; border-left: 4px solid var(--primary-blue);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
-                <h4 style="margin:0;">Результат анализа состава</h4>
-                <div class="risk-badge" style="background: ${analysis.score > 80 ? 'var(--primary-light)' : 'rgba(239,68,68,0.1)'}; color: ${analysis.score > 80 ? 'var(--primary-blue)' : 'var(--accent-red)'}">Совместимость: ${analysis.score}/100</div>
-            </div>
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">${analysis.summary}</p>
-            <ul class="text-sm" style="padding-left: 1.5rem; margin-bottom: 0.5rem;">
-                <li><strong>Белок:</strong> ${analysis.proteinEvaluation}</li>
-                <li><strong>Добавки:</strong> ${analysis.supplementsEvaluation}</li>
-                ${analysis.ingredientsWarning.length > 0 ? `<li style="color:var(--accent-red);"><strong>Нежелательные ингредиенты:</strong> ${analysis.ingredientsWarning.join(', ')}</li>` : '<li><strong>Нежелательные ингредиенты:</strong> Не найдено</li>'}
-            </ul>
-        </div>
-    `;
-}
-
-function renderAnalyzerResults(recs) {
-    const container = document.getElementById('analyzer-results');
-    if (recs.length === 0) {
-        container.innerHTML = '<p class="text-sm">Подходящих товаров не найдено.</p>';
-        return;
+    resultsContainer.innerHTML = 'Анализируем состав корма с помощью ИИ...';
+    
+    const formData = new FormData();
+    formData.append('ingredients', ingredients);
+    
+    try {
+        const response = await fetch('/api/analyze-nutrition', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        renderMarkdown(data.analysis, 'nutrition-results');
+    } catch(err) {
+        console.error(err);
+        resultsContainer.innerHTML = `<p class="text-sm" style="color:var(--accent-red)">Ошибка анализа: ${err.message}</p>`;
     }
-    
-    container.innerHTML = recs.map((r) => `
-        <div class="recommendation-card">
-            <span class="cat-badge">${r.category}</span>
-            <h4>${r.item}</h4>
-            <div class="price">${r.price}</div>
-            <div class="reason">${r.reason}</div>
-            <button class="accept-btn" onclick="acceptRecommendation('${encodeURIComponent(JSON.stringify(r))}')">Принять рекомендацию</button>
-        </div>
-    `).join('');
 }
 
-window.acceptRecommendation = function(encodedRec) {
-    const rec = JSON.parse(decodeURIComponent(encodedRec));
-    
-    if (!healthData.purchases) healthData.purchases = [];
-    
-    healthData.purchases.push({
-        date: new Date().toISOString().split('T')[0],
-        item: rec.item,
-        category: rec.category,
-        reason: rec.reason
-    });
-    
-    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
-    
-    nocoService.syncPurchase({
-        date: new Date().toISOString().split('T')[0],
-        item: rec.item,
-        category: rec.category,
-        reason: rec.reason
-    });
-
-    alert(`Товар "${rec.item}" успешно добавлен в историю покупок!`);
-    renderHistory();
-};
-
-function addManualPurchase() {
+async function addManualPurchase() {
     const date = document.getElementById('purchase-date').value;
     const category = document.getElementById('purchase-category').value;
     const item = document.getElementById('purchase-item').value;
     
     if (!date || !item) return;
-    
-    if (!healthData.purchases) healthData.purchases = [];
-    
-    healthData.purchases.push({
-        date,
-        item,
-        category,
-        reason: "Добавлено вручную пользователем"
-    });
-    
-    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
-    
-    nocoService.syncPurchase({ date, item, category, reason: "Добавлено вручную" });
 
-    document.getElementById('manual-purchase-form').reset();
-    renderHistory();
-    alert("Покупка добавлена в историю!");
+    const newPurchase = { date, category, item };
+
+    try {
+        const res = await fetch('/api/purchases', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newPurchase)
+        });
+        if (res.ok) {
+            healthData.purchases.push(newPurchase);
+            document.getElementById('manual-purchase-form').reset();
+            renderHistory();
+            alert("Покупка добавлена в историю!");
+        } else {
+            alert("Ошибка сохранения на сервере.");
+        }
+    } catch (e) {
+        alert("Ошибка сети. Сохранено локально.");
+        healthData.purchases.push(newPurchase);
+        localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+        renderHistory();
+    }
 }
 
-function saveNocoConfig() {
-    const config = {
-        url: document.getElementById('noco-url').value,
-        token: document.getElementById('noco-token').value,
-        projectId: document.getElementById('noco-project').value
-    };
-    nocoService.configure(config);
-    alert("Настройки NocoDB сохранены!");
+async function renderSettings() {
+    try {
+        const settingsRes = await fetch('/api/settings');
+        const settings = await settingsRes.json();
+        
+        document.getElementById('gemini-key').value = settings.gemini_api_key || '';
+        document.getElementById('ollama-url-input').value = settings.ollama_url || 'http://localhost:11434';
+        
+        document.getElementById('profile-target-weight').value = profile.weight_target || profile.target_weight || '';
+        document.getElementById('profile-target-activity').value = profile.target_activity || '';
+        document.getElementById('profile-diet').value = profile.diet || '';
+    } catch (e) {
+        console.error("Failed to load settings:", e);
+    }
+}
+
+async function saveSystemSettings() {
+    const key = document.getElementById('gemini-key').value;
+    const url = document.getElementById('ollama-url-input').value;
+    
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([
+                { key: 'gemini_api_key', value: key },
+                { key: 'ollama_url', value: url }
+            ])
+        });
+        if (res.ok) {
+            alert("Настройки ИИ сохранены!");
+        } else {
+            alert("Ошибка сохранения настроек.");
+        }
+    } catch (e) {
+        alert("Ошибка сети: " + e.message);
+    }
+}
+
+async function saveProfileEdit() {
+    profile.weight_target = parseFloat(document.getElementById('profile-target-weight').value);
+    profile.target_weight = profile.weight_target; 
+    profile.target_activity = parseInt(document.getElementById('profile-target-activity').value);
+    profile.diet = document.getElementById('profile-diet').value;
+    
+    try {
+        const res = await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profile)
+        });
+        if (res.ok) {
+            alert("Профиль Бьярки успешно обновлен!");
+            updateUI();
+        } else {
+            alert("Ошибка сохранения профиля.");
+        }
+    } catch (e) {
+        alert("Ошибка сети: " + e.message);
+    }
 }
 
 function renderDiet() {
@@ -404,7 +405,7 @@ function renderDiet() {
     `;
 }
 
-function addNewLog() {
+async function addNewLog() {
     const weight = parseFloat(document.getElementById('weight-input').value);
     const activity = parseInt(document.getElementById('activity-input').value);
     const symptoms = document.getElementById('symptoms-input').value.split(',').map(s => s.trim()).filter(s => s);
@@ -415,79 +416,94 @@ function addNewLog() {
         date: new Date().toISOString().split('T')[0],
         weight,
         activity_minutes: activity,
-        symptoms,
-        diet: profile.diet || "Стандартный рацион",
+        symptoms: symptoms.join(','),
+        appetite: "Good",
         mood: "normal"
     };
 
-    healthData.logs.push(newEntry);
-    localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
-    nocoService.syncLog(newEntry);
-    updateUI();
-    document.getElementById('log-form').reset();
+    try {
+        const res = await fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newEntry)
+        });
+        if (res.ok) {
+            await loadData();
+            document.getElementById('log-form').reset();
+        } else {
+            alert("Ошибка сохранения записи.");
+        }
+    } catch (e) {
+        alert("Ошибка сети. Данные сохранены локально.");
+        newEntry.symptoms = symptoms;
+        healthData.logs.push(newEntry);
+        localStorage.setItem('bjarki_health_data', JSON.stringify(healthData));
+        updateUI();
+    }
 }
 
-function updateUI() {
+async function updateUI() {
     const latestLog = healthData.logs.length > 0 ? healthData.logs[healthData.logs.length - 1] : null;
     const score = calculateHealthScore(latestLog, healthData.logs, profile);
     const risk = analyzeRisk(healthData.logs);
-    const recs = getRecommendations(score, risk, profile);
 
-    // Update Score
     document.getElementById('health-score-val').textContent = score !== null ? score : '--';
     
     if (latestLog) {
-        document.getElementById('score-explanation').textContent = `Индекс основан на весе (${latestLog.weight}кг), активности (${latestLog.activity_minutes}мин) и наличии симптомов (${latestLog.symptoms.length}).`;
-        // Assuming latestLog might contain lab results for rendering
+        document.getElementById('score-explanation').textContent = `Индекс основан на весе (${latestLog.weight}кг), активности (${latestLog.activity_minutes}мин) и наличии симптомов (${latestLog.symptoms ? latestLog.symptoms.length : 0}).`;
         renderLabResults(latestLog.lab_results);
     } else {
         document.getElementById('score-explanation').textContent = "Данные пока не введены. Добавьте первую запись ниже.";
-        renderLabResults(null); // No lab data if no logs
+        renderLabResults(null);
     }
 
-    // Update Risk
     const riskEl = document.getElementById('risk-level');
     riskEl.textContent = `Уровень риска: ${risk.level}`;
     riskEl.className = `risk-indicator risk-${risk.level === 'НЕДОСТАТОЧНО ДАННЫХ' ? 'LOW' : risk.level}`;
 
-    // Update Factors
     const factorContainer = document.getElementById('risk-factors');
     factorContainer.innerHTML = risk.factors.length > 0 
         ? risk.factors.map(f => `<p>⚠️ ${f}</p>`).join('')
         : latestLog ? '<p>✅ Значительных рисков не обнаружено.</p>' : '<p>Ожидание данных...</p>';
 
-    // Update Recommendations
-    const recContainer = document.getElementById('recommendations-container');
-    recContainer.innerHTML = recs.map(r => `
-        <div class="recommendation-item">
-            <span class="priority-${r.priority}">[${r.priority}]</span> ${r.text}
-        </div>
-    `).join('');
-
-    // Update score gauge color based on score (and potentially alerts)
     updateScoreGauge(score);
-
-    // Render alerts (if any, based on risk or other factors)
-    // This part assumes 'risk' object might contain alerts or a separate alert mechanism exists.
-    // For now, we'll pass an empty array or derive from risk.factors if they are considered alerts.
-    // If a dedicated alert system is implemented, this call would be updated.
     renderAlerts(risk.factors.map(f => ({ type: 'WARNING', message: f, category: 'risk' })));
-
     renderChart();
+
+    // Fetch rich recommendations from backend Python agents
+    try {
+        const aiRes = await fetch('/api/recommendations');
+        if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const recContainer = document.getElementById('recommendations-container');
+            recContainer.innerHTML = aiData.recommendations.map(r => `
+                <div class="recommendation-item">
+                    ${r}
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        // Fallback to local JS recommendations
+        const recs = getRecommendations(score, risk, profile);
+        const recContainer = document.getElementById('recommendations-container');
+        recContainer.innerHTML = recs.map(r => `
+            <div class="recommendation-item">
+                <span class="priority-${r.priority}">[${r.priority}]</span> ${r.text}
+            </div>
+        `).join('');
+    }
 }
 
 function updateScoreGauge(score) {
     const progressCircle = document.querySelector('.gauge-progress');
     const scoreVal = document.getElementById('score-value');
     
-    // Total circumference = 2 * PI * 90 = 565.48
     const circumference = 565.48;
     const offset = circumference - (score / 100) * circumference;
     
     if (progressCircle) progressCircle.style.strokeDashoffset = offset;
     if (scoreVal) scoreVal.textContent = Math.round(score);
 
-    // Color feedback
     if (progressCircle) {
         if (score < 40) progressCircle.style.stroke = 'var(--accent-red)';
         else if (score < 75) progressCircle.style.stroke = 'var(--accent-yellow)';
@@ -584,6 +600,97 @@ function renderChart() {
             }
         }
     });
+}
+
+// Simple Markdown to HTML converter for AI outputs
+function renderMarkdown(markdown, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!markdown) {
+        container.innerHTML = '<p class="text-sm">Нет данных для отображения.</p>';
+        return;
+    }
+
+    let html = markdown
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    const lines = html.split('\n');
+    let inList = false;
+    let tableLines = [];
+    let inTable = false;
+    const processedLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+
+        if (line.startsWith('|')) {
+            inTable = true;
+            tableLines.push(line);
+            continue;
+        } else if (inTable && !line.startsWith('|')) {
+            inTable = false;
+            processedLines.push(parseMarkdownTable(tableLines));
+            tableLines = [];
+        }
+
+        if (line.startsWith('- ') || line.startsWith('* ')) {
+            if (!inList) {
+                processedLines.push('<ul>');
+                inList = true;
+            }
+            processedLines.push(`<li>${line.substring(2)}</li>`);
+        } else {
+            if (inList) {
+                processedLines.push('</ul>');
+                inList = false;
+            }
+            if (line !== '') {
+                processedLines.push(`<p>${line}</p>`);
+            }
+        }
+    }
+    
+    if (inList) processedLines.push('</ul>');
+    if (inTable) processedLines.push(parseMarkdownTable(tableLines));
+
+    container.innerHTML = processedLines.join('\n');
+}
+
+function parseMarkdownTable(tableLines) {
+    if (tableLines.length < 2) return '';
+    
+    const parseRow = (rowText) => {
+        const cells = rowText.split('|').map(c => c.trim());
+        if (cells[0] === '') cells.shift();
+        if (cells[cells.length - 1] === '') cells.pop();
+        return cells;
+    };
+
+    const headers = parseRow(tableLines[0]);
+    const bodyRows = tableLines.slice(2).map(parseRow);
+
+    let html = '<table class="markdown-table"><thead><tr>';
+    headers.forEach(h => {
+        html += `<th>${h}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    bodyRows.forEach(row => {
+        if (row.length === 0) return;
+        html += '<tr>';
+        row.forEach(cell => {
+            html += `<td>${cell}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
 }
 
 init();

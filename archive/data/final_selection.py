@@ -2,7 +2,7 @@
 import pandas as pd
 import json
 
-file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
+file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
 
 try:
     # Read rows to find header
@@ -33,8 +33,8 @@ try:
         print(f"Columns not found: name_col={name_col}, price_col={price_col}")
         sys.exit(1)
 
-    # Search for Bjarka-friendly treats
-    # Bjarka is a senior Samoyed on a pumpkin-lamb diet, overweight, joint issues.
+    # Search for bjarki-friendly treats
+    # bjarki is a senior Samoyed on a pumpkin-lamb diet, overweight, joint issues.
     # Lungs (low calorie), Trachea (glucosamine), Lamb (match diet).
     keywords = ['легені', 'трахея', 'ягн', 'баран', 'ялович', 'вухо']
     

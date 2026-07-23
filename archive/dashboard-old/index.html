@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Здоровье Бьярки | Longevity AI</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- TOP NAVIGATION -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <h2>BJARKI'S HEALTH DASHBOARD</h2>
+                <div class="nav-links">
+                    <a href="#" id="nav-dashboard" class="active">Дашборд</a>
+                    <a href="#" id="nav-history">История</a>
+                    <a href="#" id="nav-diet">Диета</a>
+                    <a href="#" id="nav-analyzer">Прайсы</a>
+                    <a href="#" id="nav-grooming">Груминг</a>
+                    <a href="#" id="nav-settings">⚙️</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span id="current-date" class="date-display"></span>
+                <button id="theme-toggle" class="theme-btn" title="Переключить тему">🌙</button>
+            </div>
+        </nav>
+
+        <div id="dashboard-view" class="view">
+            <div class="dashboard-grid">
+                
+                <!-- LEFT COLUMN -->
+                <div class="col-left">
+                    <!-- Profile Card -->
+                    <div class="widget profile-widget">
+                        <div class="profile-header">
+                            <div class="avatar">🐾</div>
+                            <div class="profile-info">
+                                <h1>Бьярки</h1>
+                                <p>Возраст: 10л 8м | Вес: 31.0 кг</p>
+                                <div id="risk-level" class="risk-badge">Оценка риска...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Health Gauge -->
+                    <div class="widget health-widget">
+                        <h3>ОБЩИЙ ИНДЕКС ЗДОРОВЬЯ</h3>
+                        <div class="score-circle">
+                            <span class="score-value" id="health-score-val">--</span>
+                        </div>
+                        <p id="score-explanation" class="text-sm">Аналитика загружается...</p>
+                    </div>
+                    
+                    <!-- Risk Factors -->
+                    <div class="widget">
+                        <h3>ФАКТОРЫ РИСКА</h3>
+                        <div id="risk-factors" class="text-sm">Ожидание...</div>
+                    </div>
+                </div>
+
+                <!-- CENTER COLUMN -->
+                <div class="col-center">
+                    <!-- Top Widgets Row -->
+                    <div class="center-top-row">
+                        <!-- Form Widget -->
+                        <div class="widget form-widget">
+                            <h3>ДОБАВИТЬ ЗАПИСЬ</h3>
+                            <form id="log-form" class="compact-form">
+                                <div class="form-row">
+                                    <div class="input-wrap">
+                                        <label>Вес (кг)</label>
+                                        <input type="number" step="0.1" id="weight-input" placeholder="27.5" required>
+                                    </div>
+                                    <div class="input-wrap">
+                                        <label>Акт. (мин)</label>
+                                        <input type="number" id="activity-input" placeholder="45" required>
+                                    </div>
+                                </div>
+                                <div class="input-wrap">
+                                    <label>Симптомы</label>
+                                    <input type="text" id="symptoms-input" placeholder="Хромота, вялость...">
+                                </div>
+                                <button type="submit" class="submit-btn">ОБНОВИТЬ</button>
+                            </form>
+                        </div>
+
+                        <!-- Lab Analytics Widget -->
+                        <div class="widget lab-widget">
+                            <h3>ПОСЛЕДНИЕ АНАЛИЗЫ</h3>
+                            <div id="lab-results-container" class="lab-compact"></div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Widget -->
+                    <div class="widget chart-widget">
+                        <h3>ТРЕНД ВЕСА (КГ)</h3>
+                        <div class="chart-container">
+                            <canvas id="weightChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="widget rec-widget">
+                        <h3>ПЕРСОНАЛЬНЫЕ РЕКОМЕНДАЦИИ</h3>
+                        <div id="recommendations-container" class="recommendation-grid-compact">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="col-right">
+                    <div class="widget alerts-widget">
+                        <h3>СРОЧНЫЕ АЛЕРТЫ</h3>
+                        <div id="alert-list" class="alert-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW VIEWS -->
+        <div id="history-view" class="view hidden">
+            <div class="view-content">
+                <div class="history-layout">
+                    <div class="widget add-purchase-widget">
+                        <h3>ДОБАВИТЬ ПОКУПКУ ВРУЧНУЮ</h3>
+                        <form id="manual-purchase-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap">
+                                    <label>Дата</label>
+                                    <input type="date" id="purchase-date" required>
+                                </div>
+                                <div class="input-wrap">
+                                    <label>Категория</label>
+                                    <select id="purchase-category">
+                                        <option value="корм">Корм</option>
+                                        <option value="лакомства">Лакомства</option>
+                                        <option value="витамины">Витамины</option>
+                                        <option value="прочее">Прочее</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-wrap">
+                                <label>Название товара</label>
+                                <input type="text" id="purchase-item" placeholder="Напр: Farmina Puppy 12kg" required>
+                            </div>
+                            <button type="submit" class="submit-btn">ДОБАВИТЬ В ИСТОРИЮ</button>
+                        </form>
+                    </div>
+                    <div class="widget">
+                        <h3>ИСТОРИЯ ЛОГОВ И ПОКУПОК</h3>
+                        <div id="history-table-container">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="diet-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget">
+                    <h3>ПЛАН ПИТАНИЯ</h3>
+                    <div id="diet-details">
+                        <!-- Injected via app.js -->
+                    </div>
+                </div>
+
+                <div class="widget" style="margin-top: 1.5rem;">
+                    <h3>АНАЛИЗАТОР СОСТАВА КОРМА</h3>
+                    <div class="analyzer-container">
+                        <form id="nutrition-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input" style="grid-column: span 2;">
+                                    <label>Введите ингредиенты корма (через запятую)</label>
+                                    <textarea id="nutrition-ingredients" rows="3" placeholder="Например: свежий ягненок (26%), дегидратированный ягненок (25%), сладкий картофель, рыбий жир, ..." required style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color); padding: 0.6rem; background: var(--bg-main); color: var(--text-dark);"></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-btn" style="margin-top: 10px;">АНАЛИЗИРОВАТЬ СОСТАВ</button>
+                        </form>
+                        <div id="nutrition-results" style="margin-top: 20px;">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analyzer-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget">
+                    <h3>АНАЛИЗАТОР ПРАЙС-ЛИСТОВ</h3>
+                    <div class="analyzer-container">
+                        <form id="analyzer-form" class="compact-form">
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input">
+                                    <label>Источник ИИ</label>
+                                    <select id="analyzer-source" class="analyzer-select" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark);">
+                                        <option value="offline">Эвристика (Без ИИ / Offline)</option>
+                                        <option value="gemini">Google Gemini 1.5 Flash</option>
+                                        <option value="openai">OpenAI ChatGPT (GPT-4o)</option>
+                                        <option value="perplexity">Perplexity (Deep Research)</option>
+                                        <option value="ollama">Local Ollama (Open Source)</option>
+                                    </select>
+                                </div>
+                                <div class="input-wrap analyzer-input">
+                                    <label>Интересующие категории</label>
+                                    <div class="category-presets" id="category-presets">
+                                        <button type="button" class="preset-btn" data-val="корм">Корм</button>
+                                        <button type="button" class="preset-btn" data-val="лакомства">Лакомства</button>
+                                        <button type="button" class="preset-btn" data-val="игрушки">Игрушки</button>
+                                        <button type="button" class="preset-btn" data-val="витамины">Витамины</button>
+                                        <button type="button" class="preset-btn" data-val="амуниция">Амуниция</button>
+                                        <button type="button" class="preset-btn" data-val="груминг">Груминг</button>
+                                    </div>
+                                    <input type="text" id="analyzer-categories" placeholder="Например: игрушки, влажный корм" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="input-wrap analyzer-input">
+                                    <label>Файл прайс-листа (TXT, CSV или EXCEL)</label>
+                                    <input type="file" id="analyzer-file" accept=".txt,.csv,.xlsx,.xls" required>
+                                </div>
+                            </div>
+                            <button type="submit" id="analyzer-submit" class="submit-btn" style="margin-top: 10px;">АНАЛИЗИРОВАТЬ</button>
+                        </form>
+                        <div id="analyzer-loading" class="hidden" style="margin-top: 15px; text-align: center;">Анализируем данные с учетом профиля здоровья...</div>
+                        <div id="analyzer-results" class="recommendation-grid" style="margin-top: 20px;">
+                            <!-- Injected via app.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="grooming-view" class="view hidden">
+            <div class="view-content">
+                <div class="grooming-layout">
+                    <!-- TOOL SELECTOR (Airplane Safety Style Icons) -->
+                    <div class="tool-sidebar">
+                        <div class="widget tool-list-widget">
+                            <h3>ИНСТРУМЕНТЫ</h3>
+                            <div class="tool-grid" id="tool-selector">
+                                <div class="tool-card active" data-tool="slicker">
+                                    <div class="tool-icon">🧤</div>
+                                    <span>Пуходерка</span>
+                                </div>
+                                <div class="tool-card" data-tool="comb">
+                                    <div class="tool-icon">🪮</div>
+                                    <span>Гребень</span>
+                                </div>
+                                <div class="tool-card" data-tool="rake">
+                                    <div class="tool-icon">🛠️</div>
+                                    <span>Грабли</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MAIN INTERACTIVE AREA -->
+                    <div class="grooming-main">
+                        <div class="widget grooming-canvas-widget">
+                            <div class="canvas-header">
+                                <h3 id="selected-tool-name">ИНСТРУКЦИЯ: ГРУМИНГ</h3>
+                                <p class="text-sm">Нажимайте на цифры, чтобы увидеть советы по зонам</p>
+                            </div>
+                            
+                            <div class="interactive-svg-container" id="samoyed-svg-container">
+                                <div id="grooming-overlay" class="overlay-info">
+                                    <div class="instruction-box">
+                                        <p>Выберите инструмент слева или нажмите на <strong>номер зоны</strong> на карте для получения совета.</p>
+                                    </div>
+                                </div>
+                                <svg id="samoyed-map" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <radialGradient id="dog-glow" cx="50%" cy="50%" r="50%">
+                                            <stop offset="0%" stop-color="rgba(14,165,233,0.1)"/>
+                                            <stop offset="100%" stop-color="transparent"/>
+                                        </radialGradient>
+                                        <filter id="fluff-light" x="-5%" y="-5%" width="110%" height="110%">
+                                            <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="1" result="noise"/>
+                                            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+                                        </filter>
+                                    </defs>
+                                    <!-- Background Glow -->
+                                    <ellipse cx="400" cy="300" rx="350" ry="220" fill="url(#dog-glow)" opacity="0.5" />
+                                    
+                                    <!-- Recognition-first Samoyed Profile -->
+                                    <g filter="url(#fluff-light)">
+                                        <path id="samoyed-body" d="
+                                            M150,220 
+                                            C130,220 110,230 100,250 
+                                            C90,270 100,290 120,300 
+                                            L150,310 
+                                            C140,350 160,450 200,480 
+                                            L250,480 
+                                            C280,480 300,470 320,450 
+                                            L450,450 
+                                            C480,470 520,480 550,480 
+                                            L600,480 
+                                            C650,450 680,350 680,280 
+                                            C680,200 650,150 580,140 
+                                            C530,135 480,160 450,200 
+                                            C420,180 350,180 300,190 
+                                            C250,200 180,210 150,220 Z" 
+                                              fill="white" stroke="#94a3b8" stroke-width="2"/>
+                                        <path d="M600,200 C700,150 720,50 630,30 C550,10 500,100 550,180" fill="white" stroke="#94a3b8" stroke-width="2"/>
+                                    </g>
+                                    <!-- Face stays simple and cute -->
+                                    <g id="face">
+                                        <circle cx="130" cy="245" r="3" fill="#1e293b"/>
+                                        <path d="M105,275 Q115,285 125,275" fill="none" stroke="#1e293b" stroke-width="2"/>
+                                        <path d="M110,282 Q115,292 120,282 Z" fill="#fda4af"/>
+                                        <path d="M220,190 L240,150 L260,195" fill="white" stroke="#94a3b8" stroke-width="2"/>
+                                    </g>
+
+                                    <!-- INTERACTIVE HOTSPOTS (1-8 Zones) -->
+                                    <g id="hotspots-layer" style="cursor: pointer;">
+                                        <g class="groom-spot" data-zone="1">
+                                            <circle cx="210" cy="180" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="210" y="185" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">1</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="2">
+                                            <circle cx="280" cy="230" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="280" y="235" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">2</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="3">
+                                            <circle cx="230" cy="350" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="230" y="355" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">3</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="4">
+                                            <circle cx="430" cy="230" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="430" y="235" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">4</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="5">
+                                            <circle cx="220" cy="460" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="220" y="465" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">5</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="6">
+                                            <circle cx="370" cy="430" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="370" y="435" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">6</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="7">
+                                            <circle cx="560" cy="440" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="560" y="445" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">7</text>
+                                        </g>
+                                        <g class="groom-spot" data-zone="8">
+                                            <circle cx="630" cy="100" r="15" fill="var(--primary-blue)" opacity="0.8" />
+                                            <text x="630" y="105" text-anchor="middle" fill="white" font-size="12" font-weight="bold" style="pointer-events: none;">8</text>
+                                        </g>
+                                    </g>
+                                    
+                                    <!-- Animated Arrows injected via JS -->
+                                    <g id="arrows-layer"></g>
+                                </svg>
+                            </div>
+
+                            <div class="zoom-panel hidden" id="zoom-details">
+                                <div class="zoom-circle">
+                                    <svg viewBox="0 0 100 100" id="zoom-svg">
+                                        <!-- Closeup hand-drawn detail -->
+                                    </svg>
+                                </div>
+                                <div class="zoom-desc">
+                                    <strong>ДЕТАЛИЗАЦИЯ:</strong>
+                                    <p id="zoom-text">Тут будет показан угол наклона зубьев инструмента.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="settings-view" class="view hidden">
+            <div class="view-content">
+                <div class="widget" style="max-width: 600px; margin: 0 auto;">
+                    <h3>НАСТРОЙКИ СИСТЕМЫ И ИИ</h3>
+                    <p class="text-sm">Настройка локальной базы данных SQLite и ключей для работы искусственного интеллекта.</p>
+                    
+                    <form id="settings-config-form" class="compact-form" style="margin-top: 20px;">
+                        <div class="input-wrap">
+                            <label>Статус локальной базы данных (SQLite)</label>
+                            <div class="db-status-badge">🟢 Подключено (bjarki_health.db)</div>
+                        </div>
+                        <div class="input-wrap">
+                            <label>Google Gemini API Key</label>
+                            <input type="password" id="gemini-key" placeholder="AIzaSy...">
+                        </div>
+                        <div class="input-wrap">
+                            <label>Ollama URL (Локальный ИИ)</label>
+                            <input type="text" id="ollama-url-input" placeholder="http://localhost:11434">
+                        </div>
+                        <button type="submit" class="submit-btn" style="background:var(--text-dark)">СОХРАНИТЬ НАСТРОЙКИ</button>
+                    </form>
+
+                    <div class="widget" style="margin-top: 20px; padding: 1.5rem; background: var(--bg-main);">
+                        <h3>ПРОФИЛЬ БЬЯРКИ</h3>
+                        <p class="text-sm">Редактирование основных параметров здоровья.</p>
+                        <form id="profile-edit-form" class="compact-form" style="margin-top: 15px;">
+                            <div class="form-row">
+                                <div class="input-wrap">
+                                    <label>Целевой вес (кг)</label>
+                                    <input type="number" step="0.1" id="profile-target-weight" required>
+                                </div>
+                                <div class="input-wrap">
+                                    <label>Целевая активность (мин)</label>
+                                    <input type="number" id="profile-target-activity" required>
+                                </div>
+                            </div>
+                            <div class="input-wrap">
+                                <label>Диета</label>
+                                <input type="text" id="profile-diet" required>
+                            </div>
+                            <button type="submit" class="submit-btn">СОХРАНИТЬ ПРОФИЛЬ</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

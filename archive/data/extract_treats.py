@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import sys
 
-file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
+file_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarki-longevity-ai-project\data\Наявність на складі_на 01.04.26.xlsx"
 
 try:
     df_raw = pd.read_excel(file_path, nrows=20, header=None)
@@ -41,7 +41,7 @@ try:
         if 'кіст' in name: score -= 5
         if 'печив' in name: score -= 3
         
-        # Bjarka's specific diet (Farmina N&D Pumpkin Lamb)
+        # bjarki's specific diet (Farmina N&D Pumpkin Lamb)
         if 'farmina' in name.lower(): score += 20  # Matches brand preference maybe
         
         candidates.append({

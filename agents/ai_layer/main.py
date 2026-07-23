@@ -9,7 +9,7 @@ from risk_engine import RiskEngine
 from recommendation_system import RecommendationSystem
 
 def run_ai_layer(profile_path):
-    print("--- Starting Bjarka Longevity AI Analysis ---")
+    print("--- Starting bjarki Longevity AI Analysis ---")
     
     # 1. Health Analysis
     analyzer = HealthAnalyzer(profile_path)
@@ -32,5 +32,7 @@ def run_ai_layer(profile_path):
     print("\n--- Analysis Complete ---")
 
 if __name__ == "__main__":
-    profile_path = r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\profile\bjarka-profile.json"
+    # Resolve path relative to script directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    profile_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "profile", "bjarki-profile.json")
     run_ai_layer(profile_path)

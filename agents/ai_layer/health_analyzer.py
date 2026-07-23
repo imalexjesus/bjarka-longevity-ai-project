@@ -52,5 +52,7 @@ class HealthAnalyzer:
 
 if __name__ == "__main__":
     # Example usage
-    analyzer = HealthAnalyzer(r"c:\Users\aj\Documents\AI_ANTIGRAV\bjarka-longevity-ai-project\profile\bjarka-profile.json")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    profile_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "profile", "bjarki-profile.json")
+    analyzer = HealthAnalyzer(profile_path)
     print(analyzer.analyze())
