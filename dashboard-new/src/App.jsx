@@ -86,6 +86,47 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeArticle, setActiveArticle] = useState(null);
   const [articleLoading, setArticleLoading] = useState(false);
+  const [showPassport, setShowPassport] = useState(false);
+
+  const masterGroomingTools = [
+    { id: "tool-1", name: "Show Tech Tuffer Than Tangles (Large)", category: "Пуходерки", priceUah: 1280, priceEur: 19, priceUsd: 22, isEssential: true },
+    { id: "tool-2", name: "Show Tech Tuffer Than Tangles (Medium)", category: "Пуходерки", priceUah: 1070, priceEur: 16, priceUsd: 18, isEssential: false },
+    { id: "tool-3", name: "Artero Double Flexible Slicker", category: "Пуходерки", priceUah: 1150, priceEur: 17, priceUsd: 20, isEssential: true },
+    { id: "tool-4", name: "Show Tech Greyhound Comb (23 см)", category: "Гребни", priceUah: 520, priceEur: 8, priceUsd: 10, isEssential: true },
+    { id: "tool-5", name: "Show Tech Undercoat Rake (Вращающиеся зубцы)", category: "Грабли", priceUah: 650, priceEur: 10, priceUsd: 12, isEssential: true },
+    { id: "tool-6", name: "Show Tech Face and Ear Comb (Мини-расческа)", category: "Гребни", priceUah: 250, priceEur: 4, priceUsd: 5, isEssential: false },
+    { id: "tool-7", name: "Iv San Bernard Cristal Clean Shampoo (500 мл)", category: "Косметика", priceUah: 1450, priceEur: 22, priceUsd: 25, isEssential: true },
+    { id: "tool-8", name: "Iv San Bernard Cristal Clean Balm (500 мл)", category: "Косметика", priceUah: 1550, priceEur: 24, priceUsd: 27, isEssential: true },
+    { id: "tool-9", name: "Chris Christensen Ice on Ice Spray (473 мл)", category: "Косметика", priceUah: 1350, priceEur: 20, priceUsd: 24, isEssential: false },
+    { id: "tool-10", name: "Ollipet Groom Dryer 6S / Shernbao Cyclone", category: "Компрессоры", priceUah: 6800, priceEur: 110, priceUsd: 125, isEssential: true },
+    { id: "tool-11", name: "Sway Professional Thinning Scissors (Филиры)", category: "Ножницы", priceUah: 1850, priceEur: 28, priceUsd: 32, isEssential: true },
+    { id: "tool-12", name: "Artero Satin Straight Scissors 7.5\"", category: "Ножницы", priceUah: 2100, priceEur: 32, priceUsd: 36, isEssential: false },
+    { id: "tool-13", name: "Andis / Wahl Mini Trimmer (для лап)", category: "Уход за лапами", priceUah: 1950, priceEur: 30, priceUsd: 34, isEssential: true },
+    { id: "tool-14", name: "Show Tech Paw Care Protective Wax", category: "Уход за лапами", priceUah: 480, priceEur: 7, priceUsd: 8, isEssential: true }
+  ];
+
+  const toggleGroomingItem = async (tool) => {
+    const isOwned = purchases.some(p => p.item.toLowerCase().includes(tool.name.toLowerCase()));
+    if (!isOwned) {
+      const newPurchase = {
+        date: new Date().toISOString().split('T')[0],
+        category: tool.category,
+        item: tool.name
+      };
+      try {
+        const res = await fetch('/api/purchases', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newPurchase)
+        });
+        if (res.ok) {
+          fetchData();
+        }
+      } catch (err) {
+        console.error("Error saving purchase:", err);
+      }
+    }
+  };
 
   const zoneArticleMap = {
     1: { path: "grooming/samoyed-cosmetics-guide.md", title: "Мануал: Схема мытья и ухода за мордой", label: "🧼 Схема мытья и косметики" },
@@ -659,9 +700,18 @@ export default function App() {
                 <h2>ПАНЕЛЬ ЗДОРОВЬЯ</h2>
                 <p>Мониторинг Бьярки в реальном времени</p>
               </div>
-              <div className="glass-panel header-badge">
-                <Clock style={{ width: '0.85rem', height: '0.85rem' }} />
-                <span>{new Date().toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <button 
+                  onClick={() => setShowPassport(true)} 
+                  className="action-link-btn" 
+                  style={{ background: 'rgba(14, 165, 233, 0.15)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.4rem 0.85rem' }}
+                >
+                  🖨️ Паспорт Здоровья (PDF / Печать)
+                </button>
+                <div className="glass-panel header-badge">
+                  <Clock style={{ width: '0.85rem', height: '0.85rem' }} />
+                  <span>{new Date().toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
               </div>
             </div>
 
@@ -1032,6 +1082,63 @@ export default function App() {
                     }
                   </div>
                 </div>
+
+                {/* GROOMING BOX CHECKLIST & BUDGET TRACKER */}
+                <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="search-filter-bar">
+                    <span className="grooming-toolbar-title">
+                      <ShoppingBag style={{ width: '0.9rem', height: '0.9rem', color: 'var(--primary)' }} />
+                      Мой Груминг-Бокс (Инвентарь & Оценка Бюджета)
+                    </span>
+                    <span className="frequency-badge" style={{ background: 'var(--primary-glow)', color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                      🟢 Собрано: {Math.round((masterGroomingTools.filter(t => purchases.some(p => p.item.toLowerCase().includes(t.name.toLowerCase()))).length / masterGroomingTools.length) * 100)}% ({masterGroomingTools.filter(t => purchases.some(p => p.item.toLowerCase().includes(t.name.toLowerCase()))).length} / {masterGroomingTools.length})
+                    </span>
+                  </div>
+
+                  <div className="grid-2-cols" style={{ gap: '0.75rem' }}>
+                    {masterGroomingTools.map(tool => {
+                      const isOwned = purchases.some(p => p.item.toLowerCase().includes(tool.name.toLowerCase()));
+                      return (
+                        <div 
+                          key={tool.id} 
+                          className={`grooming-box-item ${isOwned ? 'owned' : ''}`}
+                          onClick={() => toggleGroomingItem(tool)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={isOwned} 
+                              onChange={() => {}}
+                              className="grooming-box-checkbox"
+                            />
+                            <div>
+                              <strong style={{ fontSize: '0.75rem', color: isOwned ? 'var(--color-green)' : 'var(--text-main)', display: 'block' }}>
+                                {tool.name}
+                              </strong>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                {tool.category} • {tool.isEssential ? '⚠️ Обязательно' : '💡 Рекомендуется'}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', fontSize: '0.7rem', fontWeight: '700', color: isOwned ? 'var(--color-green)' : '#cbd5e1' }}>
+                            {tool.priceUah} ₴
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Budget summary */}
+                  <div style={{ marginTop: '0.5rem', padding: '0.85rem', background: 'rgba(9, 13, 22, 0.4)', borderRadius: '12px', border: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                    <span>Остаток бюджета до полного комплекта:</span>
+                    <strong style={{ color: 'var(--primary)', fontSize: '0.85rem' }}>
+                      {masterGroomingTools
+                        .filter(t => !purchases.some(p => p.item.toLowerCase().includes(t.name.toLowerCase())))
+                        .reduce((sum, t) => sum + t.priceUah, 0)} ₴
+                    </strong>
+                  </div>
+                </div>
               </div>
 
               {/* Right Side: Educational details & active tools */}
@@ -1264,6 +1371,78 @@ export default function App() {
             </div>
             <div className="modal-body">
               {renderMarkdown(activeArticle.content)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEALTH & GROOMING PASSPORT MODAL */}
+      {showPassport && (
+        <div className="modal-overlay" onClick={() => setShowPassport(false)}>
+          <div className="modal-container animate-fade-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px' }}>
+            <div className="modal-header no-print">
+              <div className="modal-header-info">
+                <h3>🖨️ Паспорт Здоровья и Ухода Бьярки</h3>
+                <p>Официальная выписка для ветеринарного врача и грумера</p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button onClick={() => window.print()} className="btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.75rem' }}>
+                  Распечатать / Сохранить PDF
+                </button>
+                <button className="modal-close-btn" onClick={() => setShowPassport(false)}>
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="modal-body" style={{ background: '#f8fafc' }}>
+              <div className="passport-sheet">
+                <div className="passport-header">
+                  <div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>МЕДИЦИНСКИЙ & ГРУМИНГ ПАСПОРТ</h1>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>Платформа долголетия Бьярки (Bjarki Longevity AI System)</p>
+                  </div>
+                  <div className="passport-badge">Официальная выписка</div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'center', background: '#f1f5f9', padding: '1rem', borderRadius: '12px' }}>
+                  <img src="/samoyed-profile.jpg" alt="Самоед Бьярки" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '10px' }} />
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>БЬЯРКИ (BJARKI)</h2>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#334155' }}>
+                      <strong>Порода:</strong> Самоедская собака (Samoyed) | <strong>Возраст:</strong> {profile.age || '10 лет 8 месяцев'}
+                    </p>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#334155' }}>
+                      <strong>Текущий вес:</strong> {latestLog?.weight || profile.weight_current || 31.0} кг (Целевой: {profile.weight_target || 25.0} кг) | <strong>Индекс здоровья:</strong> {healthScore}/100
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                  <div style={{ background: '#ffffff', padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#0ea5e9', fontSize: '0.9rem' }}>🩺 Медицинский статус и рацион</h4>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.8rem', color: '#334155', lineHeight: '1.5' }}>
+                      <li><strong>Текущий рацион:</strong> {profile.diet || 'Farmina N&D Pumpkin Lamb'}</li>
+                      <li><strong>Особенности:</strong> Старческая собака (Senior 10+), контроль нагрузки на суставы лап.</li>
+                      <li><strong>Режим активности:</strong> {profile.target_activity || 45} минут ежедневных прогулок.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ background: '#fff1f2', padding: '1rem', border: '1px solid #fecdd3', borderRadius: '10px' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#e11d48', fontSize: '0.9rem' }}>⚠️ Памятка и ограничения для грумера</h4>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.8rem', color: '#9f1239', lineHeight: '1.5' }}>
+                      <li><strong>СТРОГИЙ ЗАПРЕТ:</strong> Ни в коем случае не брить машинкой налысо (опасность алопеции и потери терморегуляции).</li>
+                      <li><strong>Зона лап:</strong> Осмотр на устюки (колючки) в межпальцевом пространстве, только окантовка «Кошачья лапка».</li>
+                      <li><strong>Сушка:</strong> Сушить только мощным компрессором до полного выдува подшерстка у кожи.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b' }}>
+                  <span>Дата формирования: {new Date().toLocaleDateString('ru-RU')}</span>
+                  <span>Подпись владельца: ______________________</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

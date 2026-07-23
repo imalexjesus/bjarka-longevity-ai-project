@@ -1070,4 +1070,98 @@ body {
   box-shadow: 0 0 12px var(--primary-glow);
 }
 
+/* Grooming Box Tracker */
+.grooming-box-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--border-glass);
+  transition: all 0.2s ease;
+}
+
+.grooming-box-item:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.grooming-box-item.owned {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.grooming-box-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Printable Passport Sheet */
+.passport-sheet {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 2.5rem;
+  border-radius: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.passport-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #0ea5e9;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.passport-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .modal-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    background: white !important;
+    padding: 0 !important;
+  }
+  .modal-container {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+  }
+  .modal-header, .modal-close-btn, .no-print {
+    display: none !important;
+  }
+  .passport-sheet, .passport-sheet * {
+    visibility: visible;
+  }
+  .passport-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+}
+
+
 
