@@ -1,0 +1,33 @@
+name: Deploy to Contabo VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Container to Contabo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: SSH and Trigger Docker Compose Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 62.171.162.59
+          username: root
+          key: ${{ secrets.CONTABO_SSH_KEY }}
+          script: |
+            echo "🚀 Starting automated Contabo deployment..."
+            mkdir -p /root/bjarki-app
+            cd /root/bjarki-app
+            if [ -d .git ]; then
+              git fetch origin && git reset --hard origin/main
+            else
+              git clone https://github.com/imalexjesus/bjarka-longevity-ai-project.git .
+            fi
+            docker compose down || true
+            docker compose up -d --build
+            echo "🎉 Contabo deployment complete! App live at http://62.171.162.59:9123"
