@@ -540,6 +540,118 @@ async def ai_chat_endpoint(req: ChatRequest):
         "sources": sources
     }
 
+# --- PROCEDURES & CALENDAR API ---
+
+class ProcedureEntry(BaseModel):
+    title: str
+    category: str
+    due_date: str
+    frequency_days: int = 30
+    notes: Optional[str] = ""
+
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS procedures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        frequency_days INTEGER DEFAULT 30,
+        status TEXT DEFAULT 'pending',
+        notes TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM procedures")
+    if cursor.fetchone()[0] == 0:
+        default_procedures = [
+            ("Обработка от клещей и устюков (Симпарика/Бравекто)", "Паразиты", "2026-08-01", 30, "pending", "Контроль межпальцевых зон лап"),
+            ("Стрижка лап 'Кошачья лапка' и подрезание когтей", "Груминг", "2026-07-28", 14, "pending", "Выстригание шерсти между подушечками"),
+            ("Комплексное мытье и выдув компрессором", "Груминг", "2026-08-15", 60, "pending", "Сушка подшерстка бластером Ollipet"),
+            ("Ежегодное плановое ЭХО сердца и сдача крови", "Ветеринария", "2026-11-10", 365, "pending", "Контроль старческого сердца кобеля 10+"),
+            ("Прием суточных добавок (Омега-3 + Пробиотики)", "Питание", "2026-07-24", 1, "pending", "Добавление в вечернюю порцию корма Farmina")
+        ]
+        cursor.executemany("INSERT INTO procedures (title, category, due_date, frequency_days, status, notes) VALUES (?, ?, ?, ?, ?, ?)", default_procedures)
+        conn.commit()
+    conn.close()
+
+init_db()
+
+@app.get("/api/procedures")
+def get_procedures():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM procedures ORDER BY due_date ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.post("/api/procedures")
+def add_procedure(proc: ProcedureEntry):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO procedures (title, category, due_date, frequency_days, notes) VALUES (?, ?, ?, ?, ?)",
+        (proc.title, proc.category, proc.due_date, proc.frequency_days, proc.notes)
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.post("/api/procedures/{proc_id}/complete")
+def complete_procedure(proc_id: int):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM procedures WHERE id = ?", (proc_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Procedure not found")
+    
+    import datetime
+    today = datetime.date.today()
+    next_due = today + datetime.timedelta(days=row["frequency_days"])
+    
+    cursor.execute(
+        "UPDATE procedures SET due_date = ?, status = 'pending' WHERE id = ?",
+        (next_due.isoformat(), proc_id)
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "success", "next_due_date": next_due.isoformat()}
+
+# --- NUTRITION PORTION & CALORIE CALCULATOR API ---
+
+class CalculatorRequest(BaseModel):
+    weight_current: float = 31.0
+    weight_target: float = 25.0
+    kibble_kcal_per_kg: float = 3900.0
+
+@app.post("/api/nutrition/calculator")
+def calculate_portion(req: CalculatorRequest):
+    rer = 70.0 * (req.weight_current ** 0.75)
+    mer_maintenance = rer * 1.1
+    mer_weight_loss = mer_maintenance * 0.85
+    
+    daily_grams = round((mer_weight_loss / req.kibble_kcal_per_kg) * 1000)
+    morning_grams = round(daily_grams * 0.5)
+    evening_grams = daily_grams - morning_grams
+    
+    kg_to_lose = max(0.0, req.weight_current - req.weight_target)
+    estimated_weeks = round(kg_to_lose / 0.3)
+    
+    return {
+        "rer_kcal": round(rer),
+        "maintenance_kcal": round(mer_maintenance),
+        "target_deficit_kcal": round(mer_weight_loss),
+        "daily_grams": daily_grams,
+        "morning_grams": morning_grams,
+        "evening_grams": evening_grams,
+        "kg_to_lose": round(kg_to_lose, 1),
+        "estimated_weeks": estimated_weeks
+    }
+
 # --- SERVE FRONTEND ---
 
 # Mount dashboard files

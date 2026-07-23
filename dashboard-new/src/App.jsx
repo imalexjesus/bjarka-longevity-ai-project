@@ -90,6 +90,37 @@ export default function App() {
   const [articleLoading, setArticleLoading] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
 
+  // Procedures and Portion state
+  const [procedures, setProcedures] = useState([]);
+  const [portionCalc, setPortionCalc] = useState(null);
+
+  const fetchProcedures = () => {
+    fetch('/api/procedures')
+      .then(res => res.json())
+      .then(data => setProcedures(data))
+      .catch(err => console.error("Error fetching procedures:", err));
+  };
+
+  const fetchPortionCalc = () => {
+    fetch('/api/nutrition/calculator', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight_current: profile.weight_current || 31.0, weight_target: profile.weight_target || 25.0, kibble_kcal_per_kg: 3900.0 })
+    })
+      .then(res => res.json())
+      .then(data => setPortionCalc(data))
+      .catch(err => console.error("Error calculating portion:", err));
+  };
+
+  const handleCompleteProcedure = async (procId) => {
+    try {
+      const res = await fetch(`/api/procedures/${procId}/complete`, { method: 'POST' });
+      if (res.ok) fetchProcedures();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // AI Consultant Chat state
   const [chatMessages, setChatMessages] = useState([
     {
@@ -280,6 +311,8 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
+    fetchProcedures();
+    fetchPortionCalc();
   }, []);
 
   // Fetch recommendations whenever logs or profile changes
@@ -946,6 +979,81 @@ export default function App() {
                     </table>
                   </div>
                 </div>
+
+                {/* PROCEDURE CALENDAR WIDGET */}
+                <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="search-filter-bar">
+                    <span className="grooming-toolbar-title">
+                      <Clock style={{ width: '0.9rem', height: '0.9rem', color: 'var(--primary)' }} />
+                      Календарь Процедур и Ухода Бьярки
+                    </span>
+                    <span className="frequency-badge" style={{ background: 'var(--primary-glow)', color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                      📅 Ближайшие задачи
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    {procedures.map((proc) => {
+                      const isOverdue = new Date(proc.due_date) < new Date();
+                      return (
+                        <div 
+                          key={proc.id} 
+                          className={`grooming-box-item ${proc.status === 'completed' ? 'owned' : ''}`}
+                          style={{ padding: '0.75rem 1rem' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <button 
+                              onClick={() => handleCompleteProcedure(proc.id)}
+                              className="btn-primary" 
+                              style={{ padding: '0.25rem 0.6rem', fontSize: '0.65rem' }}
+                            >
+                              ✓ Выполнено
+                            </button>
+                            <div>
+                              <strong style={{ fontSize: '0.75rem', color: 'var(--text-main)', display: 'block' }}>
+                                {proc.title}
+                              </strong>
+                              <span style={{ fontSize: '0.65rem', color: isOverdue ? 'var(--color-red)' : 'var(--text-muted)' }}>
+                                {proc.category} • Срок: <strong>{proc.due_date}</strong> {isOverdue ? '⚠️ Просрочено!' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                            Раз в {proc.frequency_days} дн.
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* FOOD PORTION & CALORIE CALCULATOR */}
+                {portionCalc && (
+                  <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <span className="grooming-toolbar-title">
+                      <ShoppingBag style={{ width: '0.9rem', height: '0.9rem', color: 'var(--primary)' }} />
+                      Расчет Порции Корма & Дефицита Калорий (Farmina N&D)
+                    </span>
+
+                    <div className="grid-2-cols" style={{ gap: '0.75rem' }}>
+                      <div style={{ background: 'rgba(15,23,42,0.4)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>СУТОЧНАЯ НОРМА КОРМА</span>
+                        <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>{portionCalc.daily_grams} г / день</strong>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+                          Утро: {portionCalc.morning_grams} г | Вечер: {portionCalc.evening_grams} г
+                        </p>
+                      </div>
+
+                      <div style={{ background: 'rgba(15,23,42,0.4)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>ПРОГНОЗ СГОНКИ ВЕСА</span>
+                        <strong style={{ fontSize: '1.2rem', color: 'var(--color-green)' }}>-{portionCalc.kg_to_lose} кг</strong>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+                          Курс: ~{portionCalc.estimated_weeks} недель (целевая норма {portionCalc.target_deficit_kcal} ккал/день)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>
